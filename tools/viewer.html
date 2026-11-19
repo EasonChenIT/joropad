@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#f4f4f2}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+const scene_desc = await (await fetch('scene.json?' + Math.random())).json();
+const W = scene_desc.width || 1600, H = scene_desc.height || 1000;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H);
+renderer.setClearColor(0xf4f4f2);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 1.6));
+const d1 = new THREE.DirectionalLight(0xffffff, 1.6); d1.position.set(-0.6, -1.0, 1.4); scene.add(d1);
+const d2 = new THREE.DirectionalLight(0xffffff, 0.6); d2.position.set(1.0, 0.8, 0.6); scene.add(d2);
+const loader = new STLLoader();
+const box = new THREE.Box3();
+for (const p of scene_desc.parts) {
+  const buf = await (await fetch(p.file + '?' + Math.random())).arrayBuffer();
+  const g = loader.parse(buf); g.computeVertexNormals();
+  const m = new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.75, metalness: 0.05,
+    transparent: (p.opacity ?? 1) < 1, opacity: p.opacity ?? 1, flatShading: true, side: THREE.DoubleSide });
+  const mesh = new THREE.Mesh(g, m); scene.add(mesh);
+  if (p.edges) {
+    const e = new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), new THREE.LineBasicMaterial({ color: 0x333333 }));
+    scene.add(e);
+  }
+  g.computeBoundingBox(); box.union(g.boundingBox);
+}
+const c = scene_desc.camera;
+let cam;
+const tgt = new THREE.Vector3(...(c.target || box.getCenter(new THREE.Vector3()).toArray()));
+if (c.ortho) {
+  const h = c.ortho, w = h * W / H;
+  cam = new THREE.OrthographicCamera(-w / 2, w / 2, h / 2, -h / 2, -5000, 5000);
+} else { cam = new THREE.PerspectiveCamera(c.fov || 30, W / H, 1, 10000); }
+cam.up.set(...(c.up || [0, 0, 1]));
+cam.position.set(...c.pos); cam.lookAt(tgt);
+renderer.render(scene, cam);
+window.done = true;
+</script></body></html>

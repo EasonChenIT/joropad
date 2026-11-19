@@ -1,0 +1,58 @@
+== layout
+  deck W x D x H                   303.6 x 273.2 x 19.75
+  keyboard tilt / front height     4.60 deg / 7.49
+  Joro plan depth (tilted)         112.96  (footprint 112.0)
+  Joro bottom front / back z       11.08 / 2.10
+  trackpad tilt                    2.99 deg, glass plan depth 115.06
+  trackpad bottom front / back z   14.55 / 8.56
+  channel width                    11.60
+  seam rib centre ys / bay         134.66 / 136.66..250.42
+  rear zone (bay -> outside)       22.80
+  key cap proud of the deck        2.30 (pressed: 0.70)
+  seam style                       straight
+  bosses / M3 screws               24
+== solids
+  ok   top case: valid single solid, 200.4 cm3
+  ok   cover: valid single solid, 87.2 cm3
+== device fit (interference volume, mm3)
+  ok   Joro body vs top case: 0.00
+  ok   Joro body vs cover: 0.00
+  ok   key caps vs top case: 0.00
+  ok   trackpad vs cover: 0.00
+  ok   trackpad vs top case: 1.76 (all of it is the 8 crush ribs: 1.76)
+  ok   trackpad socket body vs top / cover: 0.00 / 0.00
+  ok   keyboard socket body vs top / cover: 0.00 / 0.00
+== clearances (mm)
+  ok   Joro bottom -> rails: 0.498 (foam 0.5)
+  ok   trackpad bottom -> rails: 0.499 (tape 0.5)
+  ok   glass below the deck top: 0.300
+  ok   Joro top plate against the panel underside (z 18.547)
+  ok   key caps -> opening edge: 0.500
+  ok   key cap still 0.70 proud of the deck when pressed (cap 3.5, panel 1.2, travel 1.6); needs >= 0.3
+  ok   deck height 19.75
+== sockets on the left face
+  ok   trackpad: slot y 122.1..131.7 lies on the flat part of the left face
+  ok   keyboard: slot y 252.6..262.2 lies on the flat part of the left face
+== tiles
+  ok   top_FL     151.7 x  134.5 x 19.7   69.3 cm3  solids=1
+  ok   top_FR     151.7 x  134.5 x 19.7   68.7 cm3  solids=1
+  ok   top_RL     151.7 x  138.4 x 19.7   30.5 cm3  solids=1
+  ok   top_RR     151.7 x  138.4 x 19.7   30.4 cm3  solids=1
+  ok   cover_FL   200.1 x   33.3 x 13.8    8.9 cm3  solids=1
+  ok   cover_RL   200.1 x  240.5 x 12.8   47.1 cm3  solids=1
+  ok   cover_FR   104.1 x   81.3 x 13.8   10.1 cm3  solids=1
+  ok   cover_RR   104.1 x  192.5 x 10.3   20.8 cm3  solids=1
+  info tiles hold 99.22% / 99.65% of the top case / cover volume (the rest is the 0.25 joint gap)
+== screw bosses vs seams (every boss and every cover screw must sit in exactly one tile)
+  ok   top_FL: 9 screws
+  ok   top_FR: 9 screws
+  ok   top_RL: 3 screws
+  ok   top_RR: 3 screws
+  ok   cover_FL: 3 screws
+  ok   cover_RL: 11 screws
+  ok   cover_FR: 5 screws
+  ok   cover_RR: 5 screws
+== mass
+  info solid PETG 365 g (top 254 g + cover 111 g); with devices (374 + 230 g) about 0.97 kg
+
+all checks passed

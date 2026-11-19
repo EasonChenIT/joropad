@@ -1,0 +1,52 @@
+== layout
+  deck W x D x H                   304.8 x 245.0 x 19.85
+  keyboard tilt / front height     4.60 deg / 7.49
+  Joro plan depth (tilted)         112.96  (footprint 112.0)
+  Joro bottom front / back z       11.18 / 2.20
+  trackpad tilt                    2.99 deg, glass plan depth 115.06
+  trackpad bottom front / back z   14.65 / 8.66
+  channel width                    0.00
+  seam rib centre ys / bay         123.26 / 124.76..239.72
+  rear zone (bay -> outside)       5.30
+  key cap proud of the deck        2.30 (pressed: 0.70)
+  profile                          service  (measurements NOT confirmed: estimates)
+  seam style                       one piece
+  bosses / M3 screws               12
+== measurements
+  FAIL measurements.json confirmed (real caliper readings, not estimates)  -> order files are blocked until this passes
+== solids
+  ok   top case: valid single solid, 180.4 cm3
+  ok   tray: valid single solid, 125.7 cm3
+== device fit (interference volume, mm3)
+  ok   Joro body vs top case: 0.00
+  ok   Joro body vs tray: 0.00
+  ok   key caps vs top case: 0.00
+  ok   trackpad vs tray: 0.00
+  ok   trackpad vs top case: 0.00 (all of it is the 0 crush ribs: 0.00)
+== clearances (mm)
+  ok   Joro bottom -> rails: 0.598 (foam 0.6)
+  ok   trackpad bottom -> rails: 0.499 (pad 0.5)
+  ok   glass below the deck top: 0.300
+  ok   Joro top plate against the panel underside (z 18.647)
+  ok   key caps -> opening edge: 0.800
+  ok   key cap still 0.70 proud of the deck when pressed (cap 3.5, panel 1.2, travel 1.6); needs >= 0.3
+  ok   deck height 19.85
+== lid on tray (no screws)
+  ok   lid vs tray interference: 0.00 mm3
+  ok   8 magnet pairs (d6 x 3), 4 alignment pins, 4 back hooks
+  ok   lid swings open about the back edge without hitting the tray or the Joro: 1deg 0.0, 3deg 0.0, 6deg 0.0, 10deg 0.0, 15deg 0.0, 20deg 0.0, 30deg 0.0, 45deg 0.0, 60deg 0.0, 80deg 0.0 mm3
+  ok   tray under each magnet pocket: 1.40 mm (MJF min 0.8)
+  info charging ports removed: the Joro and the trackpad come out of the deck to charge
+== one-piece parts vs bureau build volume 370 x 276 x 360
+  ok   top case: 304.8 x 245.0 x 18.2 fits (5 mm margin, any orientation)
+  ok   tray: 304.8 x 245.0 x 10.3 fits (5 mm margin, any orientation)
+== bureau tolerance budget (worst case +/-0.4% of length, JLC3DP MJF spec)
+  ok   key caps -> opening edge: 0.80 nominal, 0.22 worst case (needs >= 0.15)
+  ok   trackpad -> opening edge: 0.50 nominal, 0.18 worst case (needs >= 0.10)
+  ok   Joro -> bay wall: 1.00 nominal, 0.40 worst case (needs >= 0.20; EVA strips fill it)
+  ok   trackpad -> pocket wall: 1.00 nominal, 0.68 worst case (EVA pads fill it)
+  info tray position does not affect any visible gap: both devices are centred by the lid itself
+== mass
+  info solid MJF PA12 309 g (top 182 g + cover 127 g); with devices (374 + 230 g) about 0.91 kg
+
+FAILED: measurements.json confirmed (real caliper readings, not estimates)  -> order files are blocked until this passes
