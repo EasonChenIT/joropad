@@ -63,13 +63,25 @@ def main(which=None):
                dict(pos=(cx - 160, cy - 420, 300), target=(cx, cy, 0), fov=30))
     jobs["cover"] = cover_views
 
+    def lid_open():
+        from build123d import Axis
+        hinge = Axis((0, P.D, P.COVER_T), (1, 0, 0))
+        ang = -62
+        lid = top.rotate(hinge, ang)
+        parts = [(cov, COVER), (kb, KB), (caps, CAPS), (lid, CASE), (tp.rotate(hinge, ang), TP)]
+        render(parts, os.path.join(IMG, PFX + "lid_open.png"), dict(pos=(cx - 330, -330, 260), target=(cx, cy, 30), fov=32))
+        render([(cov, COVER)], os.path.join(IMG, PFX + "tray.png"), dict(pos=(cx - 160, -300, 280), target=(cx, cy, 0), fov=32))
+    if P.LID:
+        jobs["lid"] = lid_open
+
     def fits():
         kl, kr = Dk.fit_keyboard()
         ftp, fs = Dk.fit_trackpad(), Dk.fit_socket()
         parts = [(Pos(0, 40, 0) * kl, TILE_COLS[0]), (Pos(20, 40, 0) * kr, TILE_COLS[1]),
                  (Pos(0, -10, 0) * ftp, TILE_COLS[2]), (Pos(-30, -10, 0) * fs, TILE_COLS[3])]
         render(parts, os.path.join(IMG, PFX + "fit_tests.png"), dict(pos=(cx - 120, -330, 330), target=(cx, 130, 0), fov=30))
-    jobs["fits"] = fits
+    if P.sockets:
+        jobs["fits"] = fits
 
     for k, f in jobs.items():
         if which and k not in which:

@@ -9,6 +9,7 @@ import deck as Dk
 import split as S
 
 FAIL = []
+CN = "tray" if P.LID else "cover"
 
 
 def line(ok, msg):
@@ -36,17 +37,18 @@ def main():
     print("== measurements")
     line(P.MEASURED, "measurements.json confirmed (real caliper readings, not estimates)"
          + ("" if P.MEASURED else "  -> order files are blocked until this passes"))
-    line(P.KB_PORT_FACE == "back", f"Joro USB-C port face: {P.KB_PORT_FACE} (the layout routes it from the back face)")
+    if P.PORTS:
+        line(P.KB_PORT_FACE == "back", f"Joro USB-C port face: {P.KB_PORT_FACE} (the layout routes it from the back face)")
 
     print("== solids")
     line(top.is_valid and len(top.solids()) == 1, f"top case: valid single solid, {top.volume / 1000:.1f} cm3")
-    line(cov.is_valid and len(cov.solids()) == 1, f"cover: valid single solid, {cov.volume / 1000:.1f} cm3")
+    line(cov.is_valid and len(cov.solids()) == 1, f"{CN}: valid single solid, {cov.volume / 1000:.1f} cm3")
 
     print("== device fit (interference volume, mm3)")
     v = overlap(kb, top); line(v < 1.0, f"Joro body vs top case: {v:.2f}")
-    v = overlap(kb, cov); line(v < 1.0, f"Joro body vs cover: {v:.2f}")
+    v = overlap(kb, cov); line(v < 1.0, f"Joro body vs {CN}: {v:.2f}")
     v = overlap(caps, top); line(v < 1.0, f"key caps vs top case: {v:.2f}")
-    v = overlap(tp, cov); line(v < 1.0, f"trackpad vs cover: {v:.2f}")
+    v = overlap(tp, cov); line(v < 1.0, f"trackpad vs {CN}: {v:.2f}")
     v = overlap(tp, top)
     ribs = Dk.crush_ribs()
     v_rib = sum(overlap(tp, r) for r in ribs)
@@ -57,7 +59,8 @@ def main():
 
     print("== clearances (mm)")
     d = kb.distance_to(cov); line(abs(d - P.KB_PAD) < 0.05, f"Joro bottom -> rails: {d:.3f} (foam {P.KB_PAD})")
-    d = tp.distance_to(cov); line(abs(d - P.TP_PAD) < 0.05, f"trackpad bottom -> rails: {d:.3f} (tape {P.TP_PAD})")
+    d = min(tp.distance_to(r) for r in Dk.tp_rail_solids())
+    line(abs(d - P.TP_PAD) < 0.05, f"trackpad bottom -> rails: {d:.3f} (pad {P.TP_PAD})")
     tbb = tp.bounding_box()
     line(abs((P.H - tbb.max.Z) - P.TP_DROP) < 0.01, f"glass below the deck top: {P.H - tbb.max.Z:.3f}")
     kbb = kb.bounding_box()
@@ -68,7 +71,24 @@ def main():
          f"(cap {P.KEYCAP_H}, panel {P.KB_SKIN}, travel {P.KEY_TRAVEL}); needs >= 0.3")
     line(P.H <= 20.0, f"deck height {P.H:.2f}")
 
-    print("== sockets on the left face")
+    if P.LID:
+        print("== lid on tray (no screws)")
+        v = overlap(top, cov); line(v < 0.5, f"lid vs tray interference: {v:.2f} mm3")
+        line(len(P.MAG_POS) >= 6, f"{len(P.MAG_POS)} magnet pairs (d{P.MAG_D:g} x {P.MAG_H:g}), {len(P.PIN_POS)} alignment pins, "
+                                  f"{len(P.HOOK_X)} back hooks")
+        from build123d import Axis
+        hinge = Axis((0, P.D, P.COVER_T), (1, 0, 0))            # the lid pivots on its back bottom edge
+        hit = [(a, overlap(top.rotate(hinge, -a), cov) + overlap(top.rotate(hinge, -a), kb))
+               for a in (1, 3, 6, 10, 15, 20, 30, 45, 60, 80)]
+        worst = max(hit, key=lambda t: t[1])
+        line(worst[1] < 0.5, "lid swings open about the back edge without hitting the tray or the Joro: "
+                             + ", ".join(f"{a}deg {v:.1f}" for a, v in hit) + " mm3")
+        floor = P.COVER_T + P.MAG_PAD_H - P.MAG_H - 0.2
+        line(floor >= 0.8, f"tray under each magnet pocket: {floor:.2f} mm (MJF min 0.8)")
+        note("charging ports removed: the Joro and the trackpad come out of the deck to charge")
+
+    if P.sockets:
+        print("== sockets on the left face")
     for s in P.sockets:
         y_lo, y_hi = s["y"] - P.slot_w / 2, s["y"] + P.slot_w / 2
         flat = P.CORNER_R <= y_lo and y_hi <= P.D - P.CORNER_R
@@ -79,7 +99,7 @@ def main():
     else:
         print("== one-piece parts vs bureau build volume " + " x ".join(f"{v:.0f}" for v in P.BUILD_VOLUME))
         lim = sorted(P.BUILD_VOLUME)
-        for name, part in (("top case", top), ("cover", cov)):
+        for name, part in (("top case", top), (CN, cov)):
             bb = part.bounding_box()
             dims = sorted((bb.size.X, bb.size.Y, bb.size.Z))
             line(all(d <= l - 5 for d, l in zip(dims, lim)),
@@ -93,9 +113,12 @@ def main():
         line(left >= 0.1, f"trackpad -> opening edge: {P.TP_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.10)")
         left = P.KB_CLR - tol * (P.KB_W + 2 * P.KB_CLR) / 2
         line(left >= 0.2, f"Joro -> bay wall: {P.KB_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.20; EVA strips fill it)")
-        left = P.TP_RING_CLR - tol * (P.TP_W + 2 * P.TP_RING_CLR) / 2
-        line(left >= 0.3, f"trackpad -> pocket wall: {P.TP_RING_CLR:.2f} nominal, {left:.2f} worst case (EVA pads fill it)")
-        note("cover <-> wall gap is not budgeted: both parts come out of the same build and scale together")
+        left = P.tp_ring_in - tol * (P.TP_W + 2 * P.tp_ring_in) / 2
+        line(left >= 0.3, f"trackpad -> pocket wall: {P.tp_ring_in:.2f} nominal, {left:.2f} worst case (EVA pads fill it)")
+        if not P.LID:
+            note("cover <-> wall gap is not budgeted: both parts come out of the same build and scale together")
+        else:
+            note("tray position does not affect any visible gap: both devices are centred by the lid itself")
 
     print("== mass")
     g = (top.volume + cov.volume) / 1000 * P.DENSITY

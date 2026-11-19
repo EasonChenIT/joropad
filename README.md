@@ -1,23 +1,26 @@
 # joropad
 
-Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用 3D 打印制作。顶面完全水平，触控板玻璃比面板低 0.3 mm，两个设备都从底面装入，两个 USB-C 充电口在左侧面。
+Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用 3D 打印制作。顶面完全水平，只露出键帽；触控板玻璃比面板低 0.3 mm。整个上壳是一个用磁铁吸住的盖子，掀开就能拿出键盘和触控板去充电，不用螺丝。
 
-![v9](docs/img/hero.png)
+![deck](docs/img/svc_hero.png)
+![open](docs/img/svc_lid_open.png)
 
 用 build123d（OpenCascade）建模，可以直接输出 STEP。有两种生成方式：
 
-- **service（默认）**：交给打印服务商一次成型。上壳、底盖各打一整块（JLC3DP MJF 尼龙 PA12），底盖是全封闭的实心板。配合尺寸留足服务商的公差，用泡棉定位，用自攻螺丝固定。
+- **service（默认）**：交给打印服务商一次成型。上壳、底盘各打一整块（JLC3DP MJF 尼龙 PA12），底盘是全封闭的实心板。
+  - 上壳靠 8 对磁铁、4 根定位销和后边 4 个挂钩扣在底盘上，没有螺丝，也没有充电口。
+  - 配合尺寸留足了服务商的公差，键盘和触控板都用泡棉定位。
   1. 先按 [实测表](docs/measure_sheet.md) 量好设备尺寸。
   2. 下单和装配看 [下单与装配指南](docs/order_guide.md)。
   3. **实测值没确认之前，程序不会生成下单文件。**
-- **fdm**（v9）：用自己的 256 mm 打印机打，拆成 8 块。见 [docs/v9_notes.md](docs/v9_notes.md)。`out/print/` 和 `out/joro_deck_v9_step.zip` 是 v9 按估计值生成的快照。
+- **fdm**（v9）：用自己的 256 mm 打印机打，拆成 8 块，带两个 USB-C 充电口，用螺丝固定。见 [docs/v9_notes.md](docs/v9_notes.md)。`out/print/` 和 `out/joro_deck_v9_step.zip` 是 v9 按估计值生成的快照。
 
 上一版的交接文档：[docs/v8_handoff.md](docs/v8_handoff.md)
 
 ## 文件
 
 **服务商版**：实测值确认后，由 `python build.py` 生成到 `out/service/`，内容包括：
-- `top_case.stl/.step`、`bottom_cover.stl/.step`
+- `top_case.stl/.step`（上壳）、`bottom_cover.stl/.step`（底盘）
 - `assembly_reference.step`（含设备包络）
 - `订单说明.txt`
 

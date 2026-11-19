@@ -64,16 +64,16 @@ def labelled(shape, label, color):
 
 ORDER_NOTE = """Joro + Magic Trackpad 主板 - 打印订单说明 / Order notes
 ==========================================================
-文件 Files: top_case.stl (上壳 top case), bottom_cover.stl (底盖 bottom cover)
+文件 Files: top_case.stl (上壳 top lid), bottom_cover.stl (底盘 bottom tray)
 单位 mm，按 1:1 打印，不要缩放 / Units mm, print 1:1, do not scale.
 工艺/材料 Process: MJF 尼龙 PA12 (HP) / MJF PA12 nylon. 染黑或本色灰 / Dyed black, or natural grey.
 数量 Qty: 各 1 件 / 1 of each.
-不需要螺纹嵌件、铜螺母、攻牙 / No threaded inserts, no tapping (self-tapping screws are used).
+不需要螺纹嵌件、铜螺母、攻牙（设计里没有螺丝）/ No threaded inserts, no tapping (the design uses no screws).
 外观面 Cosmetic face: 上壳顶面（有两个大开口的平面）/ the flat top face of top_case (the one with the two large openings).
 包装 Packing: 两件平放，用泡棉或纸板夹住，防止运输中压弯、划伤顶面。寄往澳大利亚。
               Pack both parts flat between foam or cardboard so they cannot bend; the top face must not be scratched. Shipping to Australia.
-尺寸 Size: 上壳 top case {top}; 底盖 bottom cover {cov}
-体积 Volume: 上壳 {vt:.1f} cm3, 底盖 {vc:.1f} cm3
+尺寸 Size: 上壳 top lid {top}; 底盘 bottom tray {cov}
+体积 Volume: 上壳 {vt:.1f} cm3, 底盘 {vc:.1f} cm3
 生成参数 Data: {meas}
 """
 

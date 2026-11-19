@@ -120,20 +120,24 @@ def joro():
     s.text(zx, zy + 210, "选 F 键和空格键各量一次，取较大值。", 14)
     # ---- (c) back view
     cx0, cy0 = 90, 900
-    s.text(cx0, cy0 - 30, "(c) 后视：USB-C 口和开关（K13–K16）", 18, weight="bold")
+    s.text(cx0, cy0 - 30, "(c) 后视：背面凸起（K13）", 18, weight="bold")
     s.rect(cx0, cy0, 900, 90, rx=6, fill="#f4f4f4")
     s.line(cx0 - 20, cy0 + 90, cx0 + 920, cy0 + 90, "#999", 2)
     s.text(cx0 - 20, cy0 + 112, "桌面", 14, "#999")
-    px, pw = cx0 + 700, 50
-    s.rect(px, cy0 + 40, pw, 18, rx=9, fill="#555")
-    s.rect(px - 120, cy0 + 38, 50, 20, rx=3, fill="#999")
-    s.text(px - 95, cy0 + 30, "开关", 14, anchor="middle")
-    s.text(px + 25, cy0 + 30, "USB-C", 14, anchor="middle")
-    s.text(cx0 + 900, cy0 - 6, "← 从后面看时，Esc 侧在右边", 14, anchor="end")
-    s.dim(cx0 + 900, cy0 + 130, px + pw / 2, cy0 + 130, "K14a 到 Esc 侧", side=1, off=6)
-    s.dim(cx0, cy0 + 130, px + pw / 2, cy0 + 130, "K14b 到另一侧", side=1, off=6)
-    s.dim(px + pw + 40, cy0 + 90, px + pw + 40, cy0 + 49, "K15", side=-1, off=10)
-    s.text(cx0, cy0 + 180, "量到 USB-C 口的中心。开关也按同样方法量（K16）：位置、大小、往哪个方向拨。", 14)
+    px = cx0 + 580
+    s.rect(px, cy0 + 38, 50, 20, rx=3, fill="#999")
+    s.rect(px + 120, cy0 + 40, 50, 18, rx=9, fill="#555")
+    s.text(px + 25, cy0 + 30, "开关", 14, anchor="middle")
+    s.text(px + 145, cy0 + 30, "USB-C", 14, anchor="middle")
+    # side detail of a knob sticking out
+    dx, dy = 1080, 880
+    s.text(dx, dy - 10, "侧面看开关拨钮", 15, weight="bold")
+    s.rect(dx, dy, 60, 110, fill="#f4f4f4")
+    s.rect(dx + 60, dy + 45, 14, 20, rx=2, fill="#999")
+    s.dim(dx + 60, dy + 140, dx + 74, dy + 140, "K13", side=1, off=4)
+    s.line(dx + 60, dy + 110, dx + 60, dy + 150, DIM, 1, "4 3"); s.line(dx + 74, dy + 65, dx + 74, dy + 150, DIM, 1, "4 3")
+    s.text(cx0, cy0 + 140, "背面（和两个侧面）上有没有比外壳表面凸出来的东西：开关拨钮、按钮、接口外沿等。", 15)
+    s.text(cx0, cy0 + 164, "量出凸出最多的那一个凸出多少（没有就写 0），拍照片标出位置。充电口不用量了。", 15)
     return s
 
 
@@ -158,21 +162,17 @@ def trackpad():
     s.text(bx, by + 185, "前", 15); s.text(bx + 500, by + 185, "后", 15, anchor="end")
     # back view
     cx0, cy0 = 760, 430
-    s.text(cx0, cy0 - 30, "(c) 后视（T6–T8）", 18, weight="bold")
+    s.text(cx0, cy0 - 30, "(c) 后视：背面凸起（T6）", 18, weight="bold")
     s.rect(cx0, cy0, 520, 80, rx=8, fill="#f4f4f4")
     s.line(cx0 - 20, cy0 + 80, cx0 + 540, cy0 + 80, "#999", 2)
-    px = cx0 + 160
-    s.rect(px, cy0 + 34, 40, 16, rx=8, fill="#555")
+    s.rect(cx0 + 160, cy0 + 34, 40, 16, rx=8, fill="#555")
     s.rect(cx0 + 30, cy0 + 34, 34, 14, rx=3, fill="#999")
-    s.text(px + 20, cy0 + 26, "USB-C", 14, anchor="middle")
+    s.text(cx0 + 180, cy0 + 26, "USB-C", 14, anchor="middle")
     s.text(cx0 + 47, cy0 + 26, "开关", 14, anchor="middle")
-    s.text(cx0 + 520, cy0 - 6, "从后面看时，正面的左边在右边 →", 14, anchor="end")
-    s.dim(cx0 + 520, cy0 + 115, px + 20, cy0 + 115, "T6a 到正面看的左边", side=1, off=6)
-    s.dim(cx0, cy0 + 115, px + 20, cy0 + 115, "T6b 到另一边", side=1, off=6)
-    s.dim(px + 70, cy0 + 80, px + 70, cy0 + 42, "T7", side=-1, off=8)
-    s.text(cx0, cy0 + 165, "开关（T8）也量两边的距离。", 14)
+    s.text(cx0, cy0 + 120, "电源开关或其他东西有没有凸出背面？凸出多少（没有就写 0）。", 15)
+    s.text(cx0, cy0 + 144, "充电口不用量了。", 15)
     # bottom
-    s.text(90, 700, "(d) 底面：脚垫 / 凸起（键盘 K17 同样要量）", 18, weight="bold")
+    s.text(90, 700, "(d) 底面：脚垫 / 凸起（T7；键盘 K14 同样要量）", 18, weight="bold")
     s.rect(90, 720, 340, 150, rx=20, fill="#f4f4f4")
     for fx, fy in ((120, 745), (390, 745), (120, 840), (390, 840)):
         s.rect(fx - 12, fy - 8, 24, 16, rx=8, fill="#888")
@@ -239,4 +239,4 @@ const { chromium } = require('playwright');
 
 
 if __name__ == "__main__":
-    render({"measure_joro": joro(), "measure_trackpad": trackpad(), "measure_usb": usb()})
+    render({"measure_joro": joro(), "measure_trackpad": trackpad()})

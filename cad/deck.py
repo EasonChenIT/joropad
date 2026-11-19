@@ -1,7 +1,10 @@
-"""v9 deck geometry on a real B-rep kernel (build123d / OpenCascade).
+"""Deck geometry on a real B-rep kernel (build123d / OpenCascade).
 
-top_case()  : panel + walls + palm isogrid + trackpad pocket + ribs + bosses + socket cradles
-cover()     : isogrid bottom plate + sloped rails + socket keepers + countersinks + foot recesses
+top_case()  : panel + walls + palm isogrid + trackpad pocket + ribs + bosses
+              (fdm: + socket cradles, screw holes; service/LID: + trackpad rails, magnet pockets, pin holes,
+               hook grooves, finger notch - the whole top case lifts off)
+cover()     : fdm: inset bottom plate with countersunk screws and socket keepers
+              service/LID: full-footprint solid tray with keyboard rails, magnet pads, alignment pins, back hooks
 keyboard(), keycaps(), trackpad() : simplified device envelopes for interference checks and renders
 All solids are in assembly coordinates (see params.py).
 """
@@ -177,15 +180,17 @@ def structure_sketch():
     sk.append(rect(P.tp_gx0 - P.tp_ring_out, P.WALL - 0.2, P.tp_gx1 + P.tp_ring_out, P.tp_gy0))   # merge pocket front with front wall
     sk.append(rect(P.WALL - 0.2, P.cf - P.RING_T, P.W - P.WALL + 0.2, P.cf))         # channel front wall
     sk.append(rect(P.WALL - 0.2, P.ys - P.SEAM_RIB / 2, P.W - P.WALL + 0.2, P.ys + P.SEAM_RIB / 2))   # seam rib
-    sk.append(rect(P.WALL - 0.2, P.kb_end, P.W - P.WALL + 0.2, P.bw1))               # keyboard back wall
+    if P.BACK_WALL > 0:
+        sk.append(rect(P.WALL - 0.2, P.kb_end, P.W - P.WALL + 0.2, P.bw1))           # keyboard back wall
     for bx, by in P.bosses:
-        sk.append(Pos(bx, by) * Circle(P.BOSS_R))
+        sk.append(Pos(bx, by) * Circle(P.MAG_BOSS_R if (bx, by) in P.MAG_POS else P.BOSS_R))
     s = sk_union(sk)
-    sw = P.PLUG_W / 2 + 4.0                                                            # plug head + room to turn
-    slots = [rect(P.tp_port - sw, P.cf - P.RING_T - 0.5, P.tp_port + sw, P.cf + 0.5),      # trackpad plug
-             rect(P.kb_port - sw, P.kb_end - 0.5, P.kb_port + sw, P.bw1 + 0.5)]            # keyboard plug
-    for sl in slots:
-        s = s - sl
+    if P.PORTS:
+        sw = P.PLUG_W / 2 + 4.0                                                        # plug head + room to turn
+        slots = [rect(P.tp_port - sw, P.cf - P.RING_T - 0.5, P.tp_port + sw, P.cf + 0.5),      # trackpad plug
+                 rect(P.kb_port - sw, P.kb_end - 0.5, P.kb_port + sw, P.bw1 + 0.5)]            # keyboard plug
+        for sl in slots:
+            s = s - sl
     return s & inner_outline(0.6)
 
 
@@ -225,9 +230,10 @@ def _slot(s):
 
 @lru_cache(None)
 def top_case():
-    body = prism(outline(), 0, P.H)
+    z0 = P.COVER_T if P.LID else 0.0              # the lid sits on the tray; the fdm case wraps the inset cover
+    body = prism(outline(), z0, P.H)
     body = chamfer(body.edges().group_by(Axis.Z)[-1], P.E_TOP)
-    body = chamfer(body.edges().group_by(Axis.Z)[0], P.E_BOT)
+    body = chamfer(body.edges().group_by(Axis.Z)[0], P.PART_CH if P.LID else P.E_BOT)
     body = cut(body, [prism(inner_outline(), -1, P.z_in_top)])
     # through openings in the panel, chamfered on top
     body = cut(body, [prism(tp_off(P.TP_CLR), -1, P.H + 1),
@@ -245,11 +251,59 @@ def top_case():
     # keep the device spaces clear
     body = cut(body, [prism(bay(), -1, P.z_kb_top), prism(tp_off(P.tp_ring_in), -1, P.z_in_top),
                       prism(tp_off(P.TP_CLR), P.z_in_top - 0.2, P.H + 1)])   # walls overlap the panel by 0.05
-    body = fuse(body, crush_ribs())
-    holes = [Pos(bx, by, P.COVER_T - 1) * Cylinder(P.INSERT_R, P.INSERT_D + 1, align=(Align.CENTER, Align.CENTER, Align.MIN))
-             for bx, by in P.bosses]
-    body = cut(body, holes + cuts)
+    body = fuse(body, crush_ribs() + (tp_rail_solids() if P.LID else []))
+    if P.LID:
+        cuts += lid_cuts()
+    else:
+        cuts += [Pos(bx, by, P.COVER_T - 1) * Cylinder(P.INSERT_R, P.INSERT_D + 1, align=(Align.CENTER, Align.CENTER, Align.MIN))
+                 for bx, by in P.bosses]
+    body = cut(body, cuts)
     return body
+
+
+# ------------------------------------------------------------------ lid closure (service)
+CYL = (Align.CENTER, Align.CENTER, Align.MIN)
+
+
+def _mag_pocket_r():
+    return (P.MAG_D + P.MAG_POCKET_CLR) / 2
+
+
+def lid_cuts():
+    """Top-case cuts: room for the tray's magnet pads, magnet pockets, pin holes, hook grooves, finger notch."""
+    c = []
+    z_face = P.COVER_T + P.MAG_PAD_H + 0.1                       # boss face, 0.1 above the tray pad
+    for x, y in P.MAG_POS:
+        c.append(Pos(x, y, P.COVER_T - 1) * Cylinder(P.MAG_BOSS_R + 0.6, z_face - P.COVER_T + 1, align=CYL))
+        c.append(Pos(x, y, z_face - 0.01) * Cylinder(_mag_pocket_r(), P.MAG_H + 0.21, align=CYL))
+    for x, y in P.PIN_POS:
+        c.append(Pos(x, y, P.COVER_T - 1) * Cylinder(P.PIN_R0 + P.PIN_CLR, P.PIN_H + 1.5, align=CYL))
+    yw = P.D - P.WALL                                            # inner face of the back wall
+    for x in P.HOOK_X:
+        # groove open to the bottom: only its upper lip (0.5 above the tooth) holds the lid down, so the
+        # lid can swing up about its back edge without the wall below the groove sweeping into the tooth
+        c.append(box(x - P.HOOK_W / 2 - 1, x + P.HOOK_W / 2 + 1, yw - 0.6, yw + P.HOOK_TOOTH + 0.4,
+                     P.COVER_T - 1, P.COVER_T + P.HOOK_H - 0.4 + 0.5))
+    c.append(box(P.W / 2 - P.PRY_W / 2, P.W / 2 + P.PRY_W / 2, -1, P.WALL + 1.6, P.COVER_T - 1, P.COVER_T + P.PRY_H))
+    return c
+
+
+def tray_features():
+    """Tray adds: magnet pads, alignment pins, back hooks (tab + tooth). Returns (adds, cuts)."""
+    adds, cuts = [], []
+    zb = P.COVER_T - 0.2
+    for x, y in P.MAG_POS:
+        top = P.COVER_T + P.MAG_PAD_H
+        adds.append(Pos(x, y, zb) * Cylinder(P.MAG_BOSS_R, top - zb, align=CYL))
+        cuts.append(Pos(x, y, top - P.MAG_H - 0.2) * Cylinder(_mag_pocket_r(), P.MAG_H + 1, align=CYL))
+    for x, y in P.PIN_POS:
+        adds.append(Pos(x, y, zb) * Cone(P.PIN_R0, P.PIN_R1, P.PIN_H, align=CYL))
+    yw = P.D - P.WALL
+    for x in P.HOOK_X:
+        adds.append(box(x - P.HOOK_W / 2, x + P.HOOK_W / 2, yw - 0.3 - P.HOOK_T, yw - 0.3, zb, P.COVER_T + P.HOOK_H))
+        adds.append(box(x - P.HOOK_W / 2 + 1, x + P.HOOK_W / 2 - 1, yw - 0.35, yw - 0.3 + P.HOOK_TOOTH,
+                        P.COVER_T + P.HOOK_H - 1.8, P.COVER_T + P.HOOK_H - 0.4))
+    return adds, cuts
 
 
 # ------------------------------------------------------------------ cover
@@ -272,13 +326,29 @@ def rail(x, y0, y1, ztop, width=2.0, zb=None):
     return Pos(x - width / 2, 0, 0) * extrude(Plane.YZ * prof, width)
 
 
-def rails():
-    r = []
-    for x in P.kb_rails:
-        r.append(rail(x, P.kb_fy + 3, P.kb_end - 3, lambda y: P.kb_bottom(y) - P.KB_PAD))
-    for x in P.tp_rails:
-        r.append(rail(x, P.tp_gy0 + 4, P.tp_gy1 - 4, lambda y: P.tp_bottom(y) - P.TP_PAD))
+def kb_rail_solids():
+    r = [rail(x, P.kb_fy + 3, P.kb_end - 3, lambda y: P.kb_bottom(y) - P.KB_PAD) for x in P.kb_rails]
     return [q for q in r if q is not None]
+
+
+@lru_cache(None)
+def _tp_rails():
+    if P.LID:   # full-height ribs of the lid, from wall to wall of the pocket, bearing on the tray
+        y0 = P.tp_gy0 - P.tp_ring_in - 0.3
+        y1 = P.tp_gy1 + P.tp_ring_in + 0.3
+        r = [rail(x, y0, y1, lambda y: P.tp_bottom(y) - P.TP_PAD, width=3.0, zb=P.COVER_T) for x in P.tp_rails]
+    else:
+        r = [rail(x, P.tp_gy0 + 4, P.tp_gy1 - 4, lambda y: P.tp_bottom(y) - P.TP_PAD) for x in P.tp_rails]
+    return tuple(q for q in r if q is not None)
+
+
+def tp_rail_solids():
+    return list(_tp_rails())
+
+
+def rails():
+    """Rails carried by the cover/tray."""
+    return kb_rail_solids() + ([] if P.LID else tp_rail_solids())
 
 
 def keepers():
@@ -366,6 +436,8 @@ def cover_holes():
 
 @lru_cache(None)
 def cover():
+    if P.LID:
+        return tray()
     plate = prism(cover_outline(), 0, P.COVER_T)
     holes = cover_holes() if P.COVER_HOLES else []
     if holes:
@@ -378,6 +450,17 @@ def cover():
         cuts.append(Pos(bx, by, -1) * Cylinder(P.SCREW_R, P.COVER_T + 2, align=(Align.CENTER, Align.CENTER, Align.MIN)))
     for fx, fy in P.feet:
         cuts.append(Pos(fx, fy, -1) * Cylinder(P.FOOT_R, 1 + P.FOOT_DEPTH, align=(Align.CENTER, Align.CENTER, Align.MIN)))
+    return cut(plate, cuts)
+
+
+def tray():
+    """Full-footprint solid tray: the lid (top case) sits on it."""
+    plate = prism(outline(), 0, P.COVER_T)
+    plate = chamfer(plate.edges().group_by(Axis.Z)[0], P.E_BOT)
+    plate = chamfer(plate.edges().group_by(Axis.Z)[-1], P.PART_CH)
+    adds, cuts = tray_features()
+    plate = fuse(plate, rails() + adds)
+    cuts += [Pos(fx, fy, -1) * Cylinder(P.FOOT_R, 1 + P.FOOT_DEPTH, align=CYL) for fx, fy in P.feet]
     return cut(plate, cuts)
 
 
