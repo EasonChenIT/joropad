@@ -3,3 +3,5 @@ __pycache__/
 tools/_render/
 # STEP files are shipped zipped as out/joro_deck_v9_step.zip
 out/step/
+# preview geometry from estimated measurements - never order these
+out/service_preview/

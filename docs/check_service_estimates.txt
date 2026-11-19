@@ -1,0 +1,52 @@
+== layout
+  deck W x D x H                   304.8 x 274.9 x 19.85
+  keyboard tilt / front height     4.60 deg / 7.49
+  Joro plan depth (tilted)         112.96  (footprint 112.0)
+  Joro bottom front / back z       11.18 / 2.20
+  trackpad tilt                    2.99 deg, glass plan depth 115.06
+  trackpad bottom front / back z   14.65 / 8.66
+  channel width                    12.00
+  seam rib centre ys / bay         135.26 / 136.76..251.72
+  rear zone (bay -> outside)       23.20
+  key cap proud of the deck        2.30 (pressed: 0.70)
+  profile                          service  (measurements NOT confirmed: estimates)
+  seam style                       one piece
+  bosses / M3 screws               24
+== measurements
+  FAIL measurements.json confirmed (real caliper readings, not estimates)  -> order files are blocked until this passes
+  ok   Joro USB-C port face: back (the layout routes it from the back face)
+== solids
+  ok   top case: valid single solid, 202.7 cm3
+  ok   cover: valid single solid, 87.6 cm3
+== device fit (interference volume, mm3)
+  ok   Joro body vs top case: 0.00
+  ok   Joro body vs cover: 0.00
+  ok   key caps vs top case: 0.00
+  ok   trackpad vs cover: 0.00
+  ok   trackpad vs top case: 0.00 (all of it is the 0 crush ribs: 0.00)
+  ok   trackpad socket body vs top / cover: 0.00 / 0.00
+  ok   keyboard socket body vs top / cover: 0.00 / 0.00
+== clearances (mm)
+  ok   Joro bottom -> rails: 0.598 (foam 0.6)
+  ok   trackpad bottom -> rails: 0.599 (tape 0.6)
+  ok   glass below the deck top: 0.300
+  ok   Joro top plate against the panel underside (z 18.647)
+  ok   key caps -> opening edge: 0.800
+  ok   key cap still 0.70 proud of the deck when pressed (cap 3.5, panel 1.2, travel 1.6); needs >= 0.3
+  ok   deck height 19.85
+== sockets on the left face
+  ok   trackpad: slot y 123.0..132.6 lies on the flat part of the left face
+  ok   keyboard: slot y 254.1..263.7 lies on the flat part of the left face
+== one-piece parts vs bureau build volume 370 x 276 x 360
+  ok   top case: 304.8 x 274.9 x 19.8 fits (5 mm margin, any orientation)
+  ok   cover: 299.0 x 269.1 x 13.8 fits (5 mm margin, any orientation)
+== bureau tolerance budget (worst case +/-0.4% of length, JLC3DP MJF spec)
+  ok   key caps -> opening edge: 0.80 nominal, 0.22 worst case (needs >= 0.15)
+  ok   trackpad -> opening edge: 0.50 nominal, 0.18 worst case (needs >= 0.10)
+  ok   Joro -> bay wall: 1.00 nominal, 0.40 worst case (needs >= 0.20; EVA strips fill it)
+  ok   trackpad -> pocket wall: 1.00 nominal, 0.68 worst case (EVA pads fill it)
+  info cover <-> wall gap is not budgeted: both parts come out of the same build and scale together
+== mass
+  info solid MJF PA12 293 g (top 205 g + cover 88 g); with devices (374 + 230 g) about 0.90 kg
+
+FAILED: measurements.json confirmed (real caliper readings, not estimates)  -> order files are blocked until this passes

@@ -138,6 +138,8 @@ CRUSH_R = 0.8
 
 
 def crush_ribs():
+    if P.CRUSH <= 0:
+        return []
     z_hi = P.z_in_top - 0.3
     z_lo = P.z_tp_top - 0.9 * P.TP_FRONT_H * math.cos(P.ta)
     lead = 1.0
@@ -179,8 +181,9 @@ def structure_sketch():
     for bx, by in P.bosses:
         sk.append(Pos(bx, by) * Circle(P.BOSS_R))
     s = sk_union(sk)
-    slots = [rect(P.tp_port - 10, P.cf - P.RING_T - 0.5, P.tp_port + 10, P.cf + 0.5),      # trackpad plug
-             rect(P.kb_port - 10, P.kb_end - 0.5, P.kb_port + 10, P.bw1 + 0.5)]            # keyboard plug
+    sw = P.PLUG_W / 2 + 4.0                                                            # plug head + room to turn
+    slots = [rect(P.tp_port - sw, P.cf - P.RING_T - 0.5, P.tp_port + sw, P.cf + 0.5),      # trackpad plug
+             rect(P.kb_port - sw, P.kb_end - 0.5, P.kb_port + sw, P.bw1 + 0.5)]            # keyboard plug
     for sl in slots:
         s = s - sl
     return s & inner_outline(0.6)
@@ -251,7 +254,7 @@ def top_case():
 
 # ------------------------------------------------------------------ cover
 def cover_outline():
-    return inner_outline(-0.2)
+    return inner_outline(-P.COVER_GAP)
 
 
 def rail(x, y0, y1, ztop, width=2.0, zb=None):
@@ -299,7 +302,7 @@ def seam_lines_cover():
 
 def cover_keep(g=0.0):
     """Solid (unperforated) regions of the cover, each grown by g."""
-    k = [inner_outline(-0.2) - inner_outline(-0.2 - 6.0 - g)]            # edge band
+    k = [inner_outline(-P.COVER_GAP) - inner_outline(-P.COVER_GAP - 6.0 - g)]   # edge band
     k += [Pos(bx, by) * Circle(6.0 + g) for bx, by in P.bosses]
     for x in P.kb_rails:
         k.append(rect(x - 3 - g, P.kb_fy - g, x + 3 + g, P.kb_end + g))

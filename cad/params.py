@@ -1,89 +1,102 @@
-"""Joro + Magic Trackpad deck v9: every parameter and the derived layout.
+"""Joro + Magic Trackpad deck: every parameter and the derived layout.
 
 Units mm. Axes as in v8: x to the right, y toward the back (y=0 is the edge nearest the user),
-z up (z=0 is the desk). Parameters tagged MEASURE are estimates; replace them with caliper readings.
+z up (z=0 is the desk). Device dimensions come from measurements.json (IDs match docs/measure_sheet.md).
 Everything below the "derived" line is computed; edit only the inputs above it.
+
+PROFILE "service": one-piece parts for a print bureau (JLC3DP MJF PA12). Generous clearances, foam
+                   centring and self-tapping screws, so the first print fits even with +/-0.3% bureau tolerance.
+PROFILE "fdm"    : v9 - eight tiles for a 256 mm home printer (PETG), tight fits, heat-set inserts.
 """
-import math
+import json as _json, math, os as _os
+
+PROFILE = _os.environ.get("DECK_PROFILE", "service")
 
 # ======================================================================================
-# Devices
+# Devices (from measurements.json)
 # ======================================================================================
-KB_W, KB_D = 298.0, 112.0          # Joro footprint (official)
-KB_BACK_H = 16.5                   # back frame height without keycaps (official + user)
-KB_FRONT_H = None                  # MEASURE. None -> derived from KB_ANGLE (about 7.48)
-KB_ANGLE = 4.6                     # MEASURE. typing angle (review data); only used if KB_FRONT_H is None
-KB_R = 4.0                         # MEASURE. plan corner radius of the Joro outline
-KF_INSET = (6.0, 6.0, 6.0, 6.0)    # MEASURE. key field inset from the top outline: left, right, front, back
-KF_R = 2.0                         # MEASURE. corner radius of the key field opening
-KEY_CLR = 0.5                      # gap between key caps and the opening edge
-KEYCAP_H = 3.5                     # MEASURE. key cap top above the aluminium top plate
-KEY_TRAVEL = 1.6
-KB_PORT_X = 40.0                   # MEASURE. Joro USB-C on the back face, centre measured from its left edge.
-                                   #   Reviews disagree (back-left vs. back/upper right) - this only moves a slot.
+_MPATH = _os.environ.get("DECK_MEASUREMENTS", _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "measurements.json"))
+M = _json.load(open(_MPATH, encoding="utf-8"))
+MEASURED = bool(M.get("confirmed"))
+_R = lambda d: d / (math.sqrt(2) - 1)        # corner radius from the corner-to-arc distance along the diagonal
 
-TP_W, TP_D = 160.0, 114.9          # Magic Trackpad USB-C (official)
-TP_FRONT_H, TP_BACK_H = 4.9, 10.9  # wedge, flat bottom (official)
-TP_R = 9.0                         # MEASURE. plan corner radius (fitted to the official drawing)
-TP_PORT_X = 116.0                  # MEASURE. USB-C centre on the back face, from the left edge (front view)
-PLUG_HEAD = 9.0                    # 90-degree plug: head length out of the device face
+KB_W, KB_D = M["K1_joro_width"], M["K2_joro_depth_bottom"]
+KB_BACK_H = M["K3_joro_back_height"]
+KB_FRONT_H = M["K4_joro_front_height"]
+KB_R = _R(M["K5_joro_corner_d"])
+KF_INSET = (M["K6_keys_inset_left"], M["K7_keys_inset_right"], M["K8_keys_inset_front"], M["K9_keys_inset_back"])
+KEYCAP_H = M["K10_keycap_above_plate"]
+KEY_TRAVEL = M["K10_keycap_above_plate"] - M["K11_keycap_above_plate_pressed"]
+KB_PORT_FACE = M["K13_joro_port_face"]
+KB_PORT_X = M["K14_joro_port_from_left"]
 
+TP_W, TP_D = M["T1_tp_width"], M["T2_tp_depth_bottom"]
+TP_FRONT_H, TP_BACK_H = M["T3_tp_front_height"], M["T4_tp_back_height"]
+TP_R = _R(M["T5_tp_corner_d"])
+TP_PORT_X = M["T6_tp_port_from_left"]
+PLUG_HEAD = M["P1_plug_head_length"]
+PLUG_W = M["P2_plug_head_width"]
+
+SVC = PROFILE == "service"
 # ======================================================================================
-# Shell and structure
+# Shell and structure            (service value if different, else fdm value)
 # ======================================================================================
-SKIN = 1.2          # top panel thickness (palm rests and frame)
-KB_SKIN = 1.2       # panel thickness above the keyboard (thin it to 0.8 if the key caps stand too low)
-WALL = 2.4          # outer side wall
-COVER_T = 1.6       # bottom cover plate
-KB_PAD = 0.5        # EVA foam between the keyboard rails and the Joro
-TP_PAD = 0.5        # foam tape between the trackpad rails and the trackpad
-TP_DROP = 0.3       # trackpad glass below the deck top
-TP_CLR = 0.3        # visible gap glass <-> top opening
-TP_RING_CLR = 0.5   # pocket wall below the top opening (the tilted front face leans out ~0.26)
-RING_T = 1.2        # trackpad pocket wall
-CRUSH = 0.15        # crush-rib interference on the trackpad sides (holds it, centres it)
-KB_CLR = 0.4        # keyboard bay clearance
-CORNER_R = 10.0     # plan corner radius of the deck
-E_TOP, E_BOT = 1.0, 0.8   # 45-degree chamfers on the outer top / bottom edges
-PC = 0.4            # chamfer on the top edges of both openings
-FRONT_MARGIN = 4.0  # deck front edge -> trackpad opening
-SEAM_RIB = 4.0      # full-width rib between trackpad channel and keyboard bay (the front/back seam runs on it)
-BACK_WALL = 1.2     # keyboard back wall
-RIB = 1.6           # palm-rest isogrid rib thickness
-P_TOP = 24.0        # palm-rest isogrid period
-WEB = 2.4           # cover isogrid web
-P_COV = 18.0        # cover isogrid period
-HOLE_FILLET = 1.5   # corner radius of the cover isogrid holes
-BOSS_R = 3.75       # screw boss
-INSERT_R = 2.1      # M3 heat-set insert hole radius (d4.2)
-INSERT_D = 6.0
-CSK_D = 6.0         # countersink diameter for M3 flat-head screws in the cover
-SCREW_R = 1.7       # M3 clearance
+SKIN = 1.5 if SVC else 1.2           # top panel thickness (palm rests and frame)
+KB_SKIN = 1.2                        # panel thickness above the keyboard (thin to 0.8 if the key caps stand too low)
+WALL = 2.4                           # outer side wall
+COVER_T = 1.6                        # bottom cover plate
+COVER_GAP = 0.5 if SVC else 0.2      # cover <-> wall gap, per side
+KB_PAD = 0.6 if SVC else 0.5         # rail -> Joro gap, filled with 1.0 mm EVA (service) / 0.5 mm EVA (fdm)
+TP_PAD = 0.6 if SVC else 0.5         # rail -> trackpad gap, filled with 1.0 mm double-sided foam tape
+TP_DROP = 0.3                        # trackpad glass below the deck top
+TP_CLR = 0.5 if SVC else 0.3         # visible gap glass <-> top opening
+TP_RING_CLR = 1.0 if SVC else 0.5    # pocket wall <-> glass outline (service: 1.5 mm EVA pads centre the trackpad)
+RING_T = 1.2                         # trackpad pocket wall
+CRUSH = 0.0 if SVC else 0.15         # crush-rib interference; 0 disables the ribs
+KB_CLR = 1.0 if SVC else 0.4         # keyboard bay clearance (service: 1.5 mm EVA strips centre the Joro)
+KF_R = M["K12_keycap_corner_r"] + (0.8 if SVC else 0.5)
+KEY_CLR = 0.8 if SVC else 0.5        # gap between key caps and the opening edge
+CORNER_R = 10.0                      # plan corner radius of the deck
+E_TOP, E_BOT = 1.0, 0.8              # 45-degree chamfers on the outer top / bottom edges
+PC = 0.4                             # chamfer on the top edges of both openings
+FRONT_MARGIN = 4.0                   # deck front edge -> trackpad opening
+SEAM_RIB = 4.0 if not SVC else 3.0   # full-width rib between trackpad channel and keyboard bay
+BACK_WALL = 1.2                      # keyboard back wall
+RIB = 1.6                            # palm-rest isogrid rib thickness
+P_TOP = 24.0                         # palm-rest isogrid period
+WEB = 2.4                            # cover isogrid web
+P_COV = 18.0                         # cover isogrid period
+HOLE_FILLET = 1.5                    # corner radius of the cover isogrid holes
+BOSS_R = 3.75                        # screw boss
+INSERT_R = 1.25 if SVC else 2.1      # service: pilot for ST3.0 self-tapping screws; fdm: M3 heat-set insert (d4.2)
+INSERT_D = 8.0 if SVC else 6.0
+CSK_D = 6.4 if SVC else 6.0          # countersink diameter in the cover
+SCREW_R = 1.8 if SVC else 1.7        # screw clearance in the cover
 FOOT_R, FOOT_DEPTH = 5.25, 0.6
 
 # ======================================================================================
-# USB-C panel sockets (both on the left face, horizontal - v8 intent)
+# USB-C panel sockets (both on the left face) - module dimensions from measurements.json
 # ======================================================================================
-SOCK_SLOT = (9.6, 3.9)       # stadium opening in the wall (receptacle shell 8.94 x 3.26 + clearance)
-SOCK_BODY = (11.0, 6.0, 14.0)  # MEASURE. module body behind the receptacle: width, height, depth
-SOCK_WALL = 1.2              # wall left in front of the body (= how far the receptacle shell must stick out)
-SOCK_CLR = 0.3
-SOCK_PAD = 1.0               # foam between the cover post and the socket body
-SOCK_ORIENT = "h"            # "h": slot horizontal (like a laptop). "v": slot vertical, saves ~5 mm of depth
+SOCK_SLOT = (M["U5_socket_shell_width"] + 0.66, M["U6_socket_shell_height"] + 0.64)   # stadium hole in the wall
+SOCK_BODY = (M["U1_socket_body_width"], M["U2_socket_body_height"], M["U3_socket_body_depth"])
+SOCK_WALL = max(0.8, min(M["U4_socket_shell_protrusion"], WALL))   # wall left in front of the body
+SOCK_CLR = 0.5 if SVC else 0.3
+SOCK_PAD = 1.0                       # foam between the cover keeper and the socket body
+SOCK_ORIENT = "h"                    # "h": slot horizontal (like a laptop). "v": slot vertical, saves ~5 mm of depth
 
 # ======================================================================================
-# Printing / splitting
+# Printing
 # ======================================================================================
-SEAM_STYLE = "straight"      # "straight": centre line + seam rib, hidden by the two openings (v8 positions),
-                             #   reinforced by bulkheads and bosses on both sides. Clean top surface.
-                             # "dovetail": front seam moved into the left palm rest, dovetail tabs and boss lugs.
-                             #   Interlocks without glue, but the jigsaw outline shows on the top surface.
+SPLIT = not SVC                      # service: one-piece top case and cover; fdm: tiles
+BUILD_VOLUME = (370.0, 276.0, 360.0) # JLC3DP MJF PA12 / PA12-HP
+SEAM_STYLE = "straight"              # fdm only. "straight": centre line + seam rib, hidden by the two openings,
+                                     #   reinforced by bulkheads. "dovetail": interlocking, outline shows on top.
 BED = 256.0
-BED_MARGIN = 3.0             # every tile must fit in BED - 2*BED_MARGIN
-GAP = 0.25                   # total gap in every puzzle joint (0.125 per side)
+BED_MARGIN = 3.0                     # every fdm tile must fit in BED - 2*BED_MARGIN
+GAP = 0.25                           # total gap in every puzzle joint (0.125 per side)
 TAB = dict(depth=6.0, neck=7.0, head=11.0)     # dovetail
 LUG = dict(depth=8.0, width=12.0)              # rectangular lug that carries a screw boss
-DENSITY = 1.27               # PETG g/cm3 (solid; the slicer's infill makes real parts lighter)
+DENSITY = 1.01 if SVC else 1.27      # MJF PA12 / PETG, g/cm3 (solid)
 
 # ======================================================================================
 # Overrides for experiments: DECK_PARAMS='{"KB_SKIN": 0.8, "SEAM_STYLE": "dovetail"}' python build.py
@@ -97,8 +110,6 @@ for _k, _v in _json.loads(_os.environ.get("DECK_PARAMS", "{}")).items():
 # ======================================================================================
 # Derived layout (do not edit below)
 # ======================================================================================
-if KB_FRONT_H is None:
-    KB_FRONT_H = KB_BACK_H - KB_D * math.tan(math.radians(KB_ANGLE))
 ka = math.atan((KB_BACK_H - KB_FRONT_H) / KB_D)          # keyboard tilt (rad)
 ta = math.atan((TP_BACK_H - TP_FRONT_H) / TP_D)          # trackpad tilt (rad)
 # plan extents of the tilted devices, measured from their front-bottom edge
@@ -180,7 +191,7 @@ if SEAM_STYLE == "straight":
     bosses += [(x, seam_boss_y) for x in (30.0, W / 2 - 14.0, W / 2 + 14.0, W - 30.0)]
     bosses += [(x, y_rz_boss) for x in (60.0, 105.0, W / 2 - 14.0, W / 2 + 14.0, W - 60.0, W - 14.0)]
     # full-height bulkheads on the centre seam (glue faces), with a cable notch at the bottom
-    bulkheads = [dict(y0=cf - 0.2, y1=ys, notch=(cf + 0.8, cf + 8.0)),
+    bulkheads = [] if not SPLIT else [dict(y0=cf - 0.2, y1=ys, notch=(cf + 0.8, cf + 8.0)),
                  dict(y0=bw1 - 0.2, y1=D - WALL + 0.2, notch=(y_rz_boss + BOSS_R + 0.5, D - WALL - 1.0))]
 else:
     seam_boss_y = kb_y0 - BOSS_R - 0.4   # inside the lugs of the rear tiles, entirely in front of the bay
@@ -222,7 +233,8 @@ def summary():
         ("seam rib centre ys / bay", f"{ys:.2f} / {kb_y0:.2f}..{kb_end:.2f}"),
         ("rear zone (bay -> outside)", f"{D - kb_end:.2f}"),
         ("key cap proud of the deck", f"{KEYCAP_H - KB_SKIN:.2f} (pressed: {KEYCAP_H - KB_SKIN - KEY_TRAVEL:.2f})"),
-        ("seam style", SEAM_STYLE),
+        ("profile", PROFILE + ("" if MEASURED else "  (measurements NOT confirmed: estimates)")),
+        ("seam style", SEAM_STYLE if SPLIT else "one piece"),
         ("bosses / M3 screws", f"{len(bosses)}"),
     ]
     return "\n".join(f"  {k:32s} {v}" for k, v in rows)

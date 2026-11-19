@@ -1,4 +1,4 @@
-"""Design checks for v9. Prints a report and exits non-zero if a hard check fails.
+"""Design checks. Prints a report and exits non-zero if a hard check fails.
 
 usage: python check.py
 """
@@ -32,6 +32,11 @@ def main():
     top, cov = Dk.top_case(), Dk.cover()
     kb, caps, tp = Dk.keyboard(), Dk.keycaps(), Dk.trackpad()
     socks = Dk.socket_bodies()
+
+    print("== measurements")
+    line(P.MEASURED, "measurements.json confirmed (real caliper readings, not estimates)"
+         + ("" if P.MEASURED else "  -> order files are blocked until this passes"))
+    line(P.KB_PORT_FACE == "back", f"Joro USB-C port face: {P.KB_PORT_FACE} (the layout routes it from the back face)")
 
     print("== solids")
     line(top.is_valid and len(top.solids()) == 1, f"top case: valid single solid, {top.volume / 1000:.1f} cm3")
@@ -69,6 +74,40 @@ def main():
         flat = P.CORNER_R <= y_lo and y_hi <= P.D - P.CORNER_R
         line(flat, f"{s['name']}: slot y {y_lo:.1f}..{y_hi:.1f} lies on the flat part of the left face")
 
+    if P.SPLIT:
+        tiles_report(top, cov)
+    else:
+        print("== one-piece parts vs bureau build volume " + " x ".join(f"{v:.0f}" for v in P.BUILD_VOLUME))
+        lim = sorted(P.BUILD_VOLUME)
+        for name, part in (("top case", top), ("cover", cov)):
+            bb = part.bounding_box()
+            dims = sorted((bb.size.X, bb.size.Y, bb.size.Z))
+            line(all(d <= l - 5 for d, l in zip(dims, lim)),
+                 f"{name}: {bb.size.X:.1f} x {bb.size.Y:.1f} x {bb.size.Z:.1f} fits (5 mm margin, any orientation)")
+        print("== bureau tolerance budget (worst case +/-0.4% of length, JLC3DP MJF spec)")
+        tol = 0.004
+        kf_len = max(P.kf_x1 - P.kf_x0, P.kf_y1 - P.kf_y0)
+        left = P.KEY_CLR - tol * kf_len / 2
+        line(left >= 0.15, f"key caps -> opening edge: {P.KEY_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.15)")
+        left = P.TP_CLR - tol * (P.TP_W + 2 * P.TP_CLR) / 2
+        line(left >= 0.1, f"trackpad -> opening edge: {P.TP_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.10)")
+        left = P.KB_CLR - tol * (P.KB_W + 2 * P.KB_CLR) / 2
+        line(left >= 0.2, f"Joro -> bay wall: {P.KB_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.20; EVA strips fill it)")
+        left = P.TP_RING_CLR - tol * (P.TP_W + 2 * P.TP_RING_CLR) / 2
+        line(left >= 0.3, f"trackpad -> pocket wall: {P.TP_RING_CLR:.2f} nominal, {left:.2f} worst case (EVA pads fill it)")
+        note("cover <-> wall gap is not budgeted: both parts come out of the same build and scale together")
+
+    print("== mass")
+    g = (top.volume + cov.volume) / 1000 * P.DENSITY
+    note(f"solid {'MJF PA12' if P.SVC else 'PETG'} {g:.0f} g (top {top.volume / 1000 * P.DENSITY:.0f} g + cover {cov.volume / 1000 * P.DENSITY:.0f} g); "
+         f"with devices (374 + 230 g) about {(g + 604) / 1000:.2f} kg")
+
+    print()
+    print("FAILED: " + "; ".join(FAIL) if FAIL else "all checks passed")
+    return 1 if FAIL else 0
+
+
+def tiles_report(top, cov):
     print("== tiles")
     tiles = {**S.top_tiles(), **S.cover_tiles()}
     lim = P.BED - 2 * P.BED_MARGIN
@@ -106,15 +145,6 @@ def main():
                 per_tile[n] = per_tile.get(n, 0) + 1
     for n in tiles:
         line(per_tile.get(n, 0) >= 3, f"{n}: {per_tile.get(n, 0)} screws")
-
-    print("== mass")
-    g = (top.volume + cov.volume) / 1000 * P.DENSITY
-    note(f"solid PETG {g:.0f} g (top {top.volume / 1000 * P.DENSITY:.0f} g + cover {cov.volume / 1000 * P.DENSITY:.0f} g); "
-         f"with devices (374 + 230 g) about {(g + 604) / 1000:.2f} kg")
-
-    print()
-    print("FAILED: " + "; ".join(FAIL) if FAIL else "all checks passed")
-    return 1 if FAIL else 0
 
 
 if __name__ == "__main__":

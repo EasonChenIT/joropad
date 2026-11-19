@@ -1,7 +1,10 @@
 """Build everything and write the deliverables to ../out.
 
-usage: python build.py            # STEP + STL + 3MF + fit tests
-       python build.py --no-step  # skip the (slow, large) STEP files
+service profile (default; one-piece parts for JLC3DP MJF):
+  python build.py             # order files -> ../out/service   (refused until measurements.json is confirmed)
+  python build.py --preview   # same geometry from the estimates -> ../out/service_preview (never order these)
+fdm profile (v9 tiles for a 256 mm home printer):
+  DECK_PROFILE=fdm python build.py [--no-step]
 """
 import os, sys, time, zipfile
 import numpy as np
@@ -59,7 +62,50 @@ def labelled(shape, label, color):
     return shape
 
 
+ORDER_NOTE = """Joro + Magic Trackpad 主板 - 打印订单说明
+=========================================
+文件: top_case.stl (上壳), bottom_cover.stl (底盖)。单位 mm, 按 1:1 打印, 不要缩放。
+工艺/材料: MJF 尼龙 PA12 (HP), 染黑 (或本色灰)。各 1 件。
+不需要螺纹嵌件/铜螺母 (用自攻螺丝)。不需要打磨抛光。
+上壳顶面 (大平面, 带两个开口的那一面) 是外观面, 请尽量朝向不易变形的方向摆放。
+尺寸: 上壳 {top}, 底盖 {cov}。
+体积: 上壳 {vt:.1f} cm3, 底盖 {vc:.1f} cm3。
+生成参数: {meas}
+"""
+
+
+def build_service():
+    preview = "--preview" in sys.argv
+    if not P.MEASURED and not preview:
+        print("measurements.json is not confirmed: refusing to write order files.\n"
+              "Fill in the caliper readings, set \"confirmed\": true, run check.py, then build again.\n"
+              "(python build.py --preview writes the same geometry from the estimates to out/service_preview.)")
+        sys.exit(2)
+    out = os.path.join(OUT, "service_preview" if preview else "service")
+    os.makedirs(out, exist_ok=True)
+    t0 = time.time()
+    top, cov = Dk.top_case(), Dk.cover()
+    for name, part, col in (("top_case", top, "#2A2B2E"), ("bottom_cover", cov, "#2A2B2E")):
+        export_step(labelled(part.moved(part.location), name, col), os.path.join(out, f"{name}.step"))
+        export_stl(part, os.path.join(out, f"{name}.stl"), tolerance=0.01, angular_tolerance=0.1)
+    asm = Compound(label="joro_trackpad_deck", children=[
+        labelled(top.moved(top.location), "top_case", "#2A2B2E"),
+        labelled(cov.moved(cov.location), "bottom_cover", "#3A3B3E"),
+        labelled(Dk.keyboard().moved(Dk.keyboard().location), "joro_envelope", "#303030"),
+        labelled(Dk.keycaps().moved(Dk.keycaps().location), "joro_keycaps_envelope", "#505050"),
+        labelled(Dk.trackpad().moved(Dk.trackpad().location), "trackpad_envelope", "#EDEDED"),
+    ] + [labelled(b, f"usbc_module_{s['name']}_envelope", "#D08030") for s, b in zip(P.sockets, Dk.socket_bodies())])
+    export_step(asm, os.path.join(out, "assembly_reference.step"))
+    sz = lambda s: " x ".join(f"{v:.1f}" for v in (s.bounding_box().size.X, s.bounding_box().size.Y, s.bounding_box().size.Z))
+    with open(os.path.join(out, "订单说明.txt"), "w", encoding="utf-8") as f:
+        f.write(ORDER_NOTE.format(top=sz(top), cov=sz(cov), vt=top.volume / 1000, vc=cov.volume / 1000,
+                                  meas="实测值 (confirmed)" if P.MEASURED else "估计值 - 仅供预览, 不要下单"))
+    print(f"wrote {out} in {time.time() - t0:.0f}s")
+
+
 def main():
+    if not P.SPLIT:
+        return build_service()
     step = "--no-step" not in sys.argv
     t0 = time.time()
     for d in ("step/tiles", "print/stl"):

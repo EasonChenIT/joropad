@@ -4,12 +4,26 @@ Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用
 
 ![v9](docs/img/hero.png)
 
-当前版本是 **v9**：用 build123d（OpenCascade）建模，可以直接输出 STEP。
+用 build123d（OpenCascade）建模，可以直接输出 STEP。有两种生成方式：
 
-- 改了什么、为什么改：[docs/v9_notes.md](docs/v9_notes.md)
-- 上一版的交接文档：[docs/v8_handoff.md](docs/v8_handoff.md)
+- **service（默认）**：交给打印服务商一次成型。上壳、底盖各打一整块（JLC3DP MJF 尼龙 PA12），配合尺寸留足服务商的公差，用泡棉定位，用自攻螺丝固定。
+  1. 先按 [实测表](docs/measure_sheet.md) 量好设备尺寸。
+  2. 下单和装配看 [下单与装配指南](docs/order_guide.md)。
+  3. **实测值没确认之前，程序不会生成下单文件。**
+- **fdm**（v9）：用自己的 256 mm 打印机打，拆成 8 块。见 [docs/v9_notes.md](docs/v9_notes.md)。`out/print/` 和 `out/joro_deck_v9_step.zip` 是 v9 按估计值生成的快照。
 
-## 成品文件
+上一版的交接文档：[docs/v8_handoff.md](docs/v8_handoff.md)
+
+## 文件
+
+**服务商版**：实测值确认后，由 `python build.py` 生成到 `out/service/`，内容包括：
+- `top_case.stl/.step`、`bottom_cover.stl/.step`
+- `assembly_reference.step`（含设备包络）
+- `订单说明.txt`
+
+目前还没有生成，因为要等实测值。
+
+**v9 FDM 快照**（按估计值生成，自己打印用）：
 
 | 文件 | 内容 |
 |---|---|
@@ -26,10 +40,14 @@ Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用
 ```bash
 pip install -r requirements.txt
 cd cad
-python params.py     # 打印尺寸摘要
-python check.py      # 干涉、间隙、分块尺寸、螺丝柱归属等检查，有失败时返回非零
-python build.py      # 写出 ../out（约 50 秒）
+python params.py              # 打印尺寸摘要
+python check.py               # 干涉、间隙、公差余量、打印尺寸等检查，有失败时返回非零
+python build.py               # 下单文件 -> ../out/service（要求 measurements.json 里 confirmed 为 true）
+python build.py --preview     # 用估计值预览 -> ../out/service_preview（不要拿去下单）
+DECK_PROFILE=fdm python build.py   # v9 的 8 块分块版本
 ```
+
+设备尺寸全部放在 `cad/measurements.json`，编号和实测表一一对应。
 
 调参数时可以直接改 `cad/params.py`，也可以只在命令行临时覆盖：
 
@@ -42,11 +60,12 @@ DECK_PARAMS='{"SEAM_STYLE":"dovetail","KB_SKIN":0.8}' python build.py
 ## 目录
 
 ```
-cad/params.py     全部参数和派生布局（标了 MEASURE 的需要实测）
+cad/measurements.json  设备实测值（编号对应 docs/measure_sheet.md）
+cad/params.py     全部参数和派生布局（service / fdm 两套）
 cad/deck.py       上壳、底盖、设备包络、试配件
 cad/split.py      分块（直缝 / 燕尾缝）和打印朝向
 cad/check.py      设计校验
 cad/build.py      导出 STEP / STL / 3MF
-tools/            渲染工具
+tools/            渲染工具、实测示意图
 legacy_v8/        v8 的 SDF + marching cubes 管线（仅作参考）
 ```
