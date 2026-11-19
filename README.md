@@ -17,6 +17,8 @@ Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用
 
 上一版的交接文档：[docs/v8_handoff.md](docs/v8_handoff.md)
 
+成品效果图、细节图和部件图在 [docs/gallery](docs/gallery)。可以旋转的 3D 页面在 `site/`，用 `python tools/gallery.py` 重新生成。
+
 ## 文件
 
 **服务商版**：实测值确认后，由 `python build.py` 生成到 `out/service/`，内容包括：
