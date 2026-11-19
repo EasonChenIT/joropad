@@ -1,6 +1,6 @@
 # joropad
 
-Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用 3D 打印制作。顶面完全水平，只露出键帽；触控板玻璃比面板低 0.3 mm。整个上壳是一个卡扣固定的盖子，掀开就能拿出键盘和触控板去充电。只有两个打印件，不需要螺丝、磁铁、泡棉、胶水等任何额外材料。
+Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用 3D 打印制作。顶面完全水平，只露出键帽；触控板开口四周有 0.8 mm 的薄边压在玻璃边缘上方，倒过来也掉不出来（玻璃比面板低约 1 mm）。整个上壳是一个卡扣固定的盖子，掀开就能拿出键盘和触控板去充电。只有两个打印件，不需要螺丝、磁铁、泡棉、胶水等任何额外材料。
 
 ![deck](docs/img/svc_hero.png)
 ![open](docs/img/svc_lid_open.png)
