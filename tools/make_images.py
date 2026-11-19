@@ -71,8 +71,19 @@ def main(which=None):
         parts = [(cov, COVER), (kb, KB), (caps, CAPS), (lid, CASE), (tp.rotate(hinge, ang), TP)]
         render(parts, os.path.join(IMG, PFX + "lid_open.png"), dict(pos=(cx - 330, -330, 260), target=(cx, cy, 30), fov=32))
         render([(cov, COVER)], os.path.join(IMG, PFX + "tray.png"), dict(pos=(cx - 160, -300, 280), target=(cx, cy, 0), fov=32))
+    def details():
+        # lid seen from below, Joro and trackpad in place: the spring fingers around both
+        crop = Dk.box(-1, 125, 60, 175, -1, 25)
+        render([(top & crop, CASE)] + [(h & crop, "#d08030") for h in Dk.springs_only()],
+               os.path.join(IMG, PFX + "springs.png"), dict(pos=(130, 40, -110), target=(55, 120, 12), fov=30))
+        # snap clip: section through the left clip
+        sx = P.SNAP_X[0]
+        cut_ = Dk.box(sx - 0.1, sx + 30, -2, 30, -1, 25)
+        render([(top & cut_, CASE), (cov & cut_, COVER)], os.path.join(IMG, PFX + "snap.png"),
+               dict(pos=(sx - 120, 12, 10), target=(sx, 8, 8), ortho=26, up=(0, 0, 1)), size=(1200, 900))
     if P.LID:
         jobs["lid"] = lid_open
+        jobs["details"] = details
 
     def fits():
         kl, kr = Dk.fit_keyboard()

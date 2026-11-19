@@ -117,7 +117,13 @@ def tp_off(o):
 
 
 def bay():
-    return rrect(P.kb_x0, P.kb_y0, P.W - P.WALL, P.kb_end, P.KB_R + P.KB_CLR)
+    return rrect(P.kb_x0, P.kb_y0, P.W - P.WALL, P.kb_end, P.KB_R + min(P.KB_CLR, P.KB_CLR_F, P.KB_CLR_B))
+
+
+def ring(e=0.0):
+    """Trackpad pocket outline: glass outline offset by TP_RING = (left, right, front, back), grown by e."""
+    L, R, F, B = P.TP_RING
+    return rrect(P.tp_gx0 - L - e, P.tp_gy0 - F - e, P.tp_gx1 + R + e, P.tp_gy1 + B + e, P.TP_R + min(P.TP_RING) + e)
 
 
 def socket_frame(s):
@@ -166,7 +172,7 @@ def crush_ribs():
 
 
 def palm_isogrid():
-    zone = rect(P.WALL - 0.2, P.WALL - 0.2, P.W - P.WALL + 0.2, P.cf - P.RING_T + 0.2) - tp_off(P.tp_ring_out - 0.2)
+    zone = rect(P.WALL - 0.2, P.WALL - 0.2, P.W - P.WALL + 0.2, P.cf - P.RING_T + 0.2) - ring(P.RING_T - 0.2)
     bb = (P.WALL, P.WALL, P.W - P.WALL, P.cf)
     strips = lattice_lines(bb, P.P_TOP, P.RIB, P.W / 2)
     g = sk_union(strips)
@@ -176,8 +182,8 @@ def palm_isogrid():
 def structure_sketch():
     """All full-height internal walls as one 2D sketch (extruded from the cover to the panel)."""
     sk = [palm_isogrid()]
-    sk.append(tp_off(P.tp_ring_out))                                                 # pocket wall (solid; cavity cut later)
-    sk.append(rect(P.tp_gx0 - P.tp_ring_out, P.WALL - 0.2, P.tp_gx1 + P.tp_ring_out, P.tp_gy0))   # merge pocket front with front wall
+    sk.append(ring(P.RING_T))                                                        # pocket wall (solid; cavity cut later)
+    sk.append(rect(P.tp_gx0 - P.TP_RING[0] - P.RING_T, P.WALL - 0.2, P.tp_gx1 + P.TP_RING[1] + P.RING_T, P.tp_gy0))   # merge with front wall
     sk.append(rect(P.WALL - 0.2, P.cf - P.RING_T, P.W - P.WALL + 0.2, P.cf))         # channel front wall
     sk.append(rect(P.WALL - 0.2, P.ys - P.SEAM_RIB / 2, P.W - P.WALL + 0.2, P.ys + P.SEAM_RIB / 2))   # seam rib
     if P.BACK_WALL > 0:
@@ -249,9 +255,9 @@ def top_case():
         cuts.append(box(x0 - 1, x1 + 1, b["notch"][0], b["notch"][1], P.COVER_T - 1, P.COVER_T + P.NOTCH_H))
     body = fuse(body, [walls] + adds)
     # keep the device spaces clear
-    body = cut(body, [prism(bay(), -1, P.z_kb_top), prism(tp_off(P.tp_ring_in), -1, P.z_in_top),
+    body = cut(body, [prism(bay(), -1, P.z_kb_top), prism(ring(), -1, P.z_in_top),
                       prism(tp_off(P.TP_CLR), P.z_in_top - 0.2, P.H + 1)])   # walls overlap the panel by 0.05
-    body = fuse(body, crush_ribs() + (tp_rail_solids() if P.LID else []))
+    body = fuse(body, crush_ribs() + (tp_rail_solids() + holders() if P.LID else []))
     if P.LID:
         cuts += lid_cuts()
     else:
@@ -285,6 +291,131 @@ def lid_cuts():
         c.append(box(x - P.HOOK_W / 2 - 1, x + P.HOOK_W / 2 + 1, yw - 0.6, yw + P.HOOK_TOOTH + 0.4,
                      P.COVER_T - 1, P.COVER_T + P.HOOK_H - 0.4 + 0.5))
     c.append(box(P.W / 2 - P.PRY_W / 2, P.W / 2 + P.PRY_W / 2, -1, P.WALL + 1.6, P.COVER_T - 1, P.COVER_T + P.PRY_H))
+    return c + snap_lid_cuts()
+
+
+# ------------------------------------------------------------------ printed holders (service): no foam
+LEAD = 1.5          # lead-in height on the entry end of every spring / pad
+
+
+def _place(shape, origin, u, n_in):
+    """Map a part built in a canonical frame (x along the wall, y into the cavity, z up) onto a wall."""
+    from build123d import Location, Plane as _Pl, mirror
+    ux, uy = u
+    nx, ny = n_in
+    if ux * ny - uy * nx < 0:            # canonical y = +90 deg from x; mirror if the wall normal is the other way
+        shape = mirror(shape, about=_Pl.XZ)
+    return Location((origin[0], origin[1], 0), (0, 0, math.degrees(math.atan2(uy, ux)))) * shape
+
+
+def _lead_wedge(reach, z0, z1, length, entry_low):
+    """Wedge that bevels the entry end of a finger / pad (canonical frame)."""
+    a, b = 0.3, reach + 1.0
+    if entry_low:
+        poly = Polygon((a, z0 - 1), (b, z0 - 1), (b, z0 + LEAD * (b - a) / max(reach - a, 0.1)), (a, z0), align=None)
+    else:
+        poly = Polygon((a, z1 + 1), (b, z1 + 1), (b, z1 - LEAD * (b - a) / max(reach - a, 0.1)), (a, z1), align=None)
+    return Pos(-3, 0, 0) * extrude(Plane.YZ * poly, length + 6)
+
+
+def spring(origin, u, n_in, reach, z0, z1, entry_low=True):
+    """Printed leaf spring: a 1 mm PA12 finger growing out of a wall at a shallow angle, round tip.
+    reach = how far the tip stands off the wall face (gap to the device + preload)."""
+    t, L = P.SPRING_T, P.SPRING_L
+    th = math.degrees(math.asin(min((reach - t / 2) / L, 0.9)))
+    tip = (L * math.cos(math.radians(th)), L * math.sin(math.radians(th)))
+    sk = (Rot(0, 0, th) * Pos(L / 2, 0) * Rectangle(L, t)) + (Pos(*tip) * Circle(t / 2)) + rect(-1.0, -0.6, 2.0, 0.35)
+    f = prism(Sketch() + sk.faces(), z0, z1) - _lead_wedge(reach, z0, z1, L, entry_low)
+    return _place(f, origin, u, n_in)
+
+
+def datum_pad(origin, u, n_in, thick, z0, z1, entry_low=True, width=8.0):
+    """Rigid pad whose face is the datum the springs push the device against."""
+    f = box(-width / 2, width / 2, -0.6, thick, z0, z1) - _lead_wedge(thick, z0, z1, width, entry_low)
+    return _place(Pos(width / 2, 0, 0) * f, origin, u, n_in)
+
+
+def holder_specs():
+    """(kind, device, origin, u, n_in, reach, z0, z1, entry_low) of every printed spring in the lid.
+    Opposing springs centre each device, so the bureau's scale error splits evenly between both sides.
+    The Joro's front edge rests on the seam rib (a short span, so a one-sided datum is fine there)."""
+    s = []
+    pre = P.SPRING_PRELOAD
+    tana_k, tana_t = math.tan(P.ka), math.tan(P.ta)
+    L_ = P.SPRING_L
+    # --- Joro (pressed in from below with the lid upside down: lead-in at the low end)
+    z0k, z1k = 12.5, P.z_kb_top - 0.8
+    for yc in (P.kb_fy + 20.0, P.kb_fy + 80.0):
+        s.append(("spring", "kb", (P.WALL, yc - L_ / 2), (0, 1), (1, 0), P.KB_CLR + pre, z0k, z1k, True))
+        s.append(("spring", "kb", (P.W - P.WALL, yc - L_ / 2), (0, 1), (-1, 0), P.KB_CLR + pre, z0k, z1k, True))
+    kb_tb = P.kb_fy + P.kb_plan_d
+    zb0, zb1 = 10.0, P.z_kb_top - 1.0
+    gap_b = (P.D - P.WALL) - (kb_tb - (P.z_kb_top - zb1) * tana_k)
+    for xc in (80.0, P.W / 2, P.W - 80.0):
+        s.append(("spring", "kb", (xc - L_ / 2, P.D - P.WALL), (1, 0), (0, -1), gap_b + pre, zb0, zb1, True))
+    # --- trackpad (dropped in from the top: lead-in at the high end); springs as tall as the side allows
+    L, R, F, B = P.TP_RING
+    z1t = P.z_in_top - 0.2
+    cx = (P.tp_gx0 + P.tp_gx1) / 2
+    for yc in (P.tp_gy0 + 30.0, P.tp_gy1 - 30.0):
+        z0 = P.tp_bottom(yc - L_ / 2) + 0.5                 # bottom of the side face is highest at the front end
+        s.append(("spring", "tp", (P.tp_gx0 - L, yc - L_ / 2), (0, 1), (1, 0), L + pre, z0, z1t, False))
+        s.append(("spring", "tp", (P.tp_gx1 + R, yc - L_ / 2), (0, 1), (-1, 0), R + pre, z0, z1t, False))
+    z0f = P.tp_bottom(P.tp_gy0 - P.tp_lean_f) + 0.5
+    lean_lo = (P.z_tp_top - z0f) * tana_t                  # front face sticks out most at its bottom
+    z0b = P.tp_bottom(P.tp_gy1) + 0.5
+    lean_hi = (P.z_tp_top - z1t) * tana_t                  # back face sticks out most at its top
+    for xc in (cx - 45.0, cx + 45.0):
+        s.append(("spring", "tp", (xc - L_ / 2, P.tp_gy0 - F), (1, 0), (0, 1), F - lean_lo + pre, z0f, z1t, False))
+        s.append(("spring", "tp", (xc - L_ / 2, P.tp_gy1 + B), (1, 0), (0, -1), B + lean_hi + pre, z0b, z1t, False))
+    return s
+
+
+@lru_cache(None)
+def _holders():
+    out = []
+    for kind, dev, o, u, n, r, z0, z1, low in holder_specs():
+        out.append(spring(o, u, n, r, z0, z1, low) if kind == "spring" else datum_pad(o, u, n, r, z0, z1, low))
+    return tuple(out)
+
+
+def holders():
+    return list(_holders())
+
+
+def springs_only():
+    return [h for h, spec in zip(_holders(), holder_specs()) if spec[0] == "spring"]
+
+
+# ------------------------------------------------------------------ snap clips (service): no magnets
+def _snap_zt():
+    return P.COVER_T + P.SNAP_L
+
+
+def snap_teeth():
+    """The hook teeth on the tray's snap arms (they deflect when the lid closes)."""
+    out = []
+    yaf, zt = P.WALL + P.SNAP_GAP, _snap_zt()
+    poly = Polygon((yaf + 0.01, zt), (yaf - P.SNAP_TOOTH, zt - 1.6), (yaf - P.SNAP_TOOTH, zt - 2.0), (yaf + 0.01, zt - 3.0), align=None)
+    for sx in P.SNAP_X:
+        out.append(Pos(sx - P.SNAP_W / 2 + 1, 0, 0) * extrude(Plane.YZ * poly, P.SNAP_W - 2))
+    return out
+
+
+def snap_arms():
+    yaf = P.WALL + P.SNAP_GAP
+    return [box(sx - P.SNAP_W / 2, sx + P.SNAP_W / 2, yaf, yaf + P.SNAP_T, P.COVER_T - 0.2, _snap_zt()) for sx in P.SNAP_X]
+
+
+def snap_lid_cuts():
+    """Grooves in the lid's front wall for the teeth, and free space behind the arms so they can flex."""
+    c = []
+    zt = _snap_zt()
+    engage = P.SNAP_TOOTH - P.SNAP_GAP                       # how far the tooth reaches into the wall
+    for sx in P.SNAP_X:
+        c.append(box(sx - P.SNAP_W / 2, sx + P.SNAP_W / 2, P.WALL - engage - 0.3, P.WALL + 0.5, zt - 3.15, zt + 0.0))
+        c.append(box(sx - P.SNAP_W / 2 - 1.5, sx + P.SNAP_W / 2 + 1.5, P.WALL, P.WALL + P.SNAP_GAP + P.SNAP_T + 2.0,
+                     P.COVER_T - 1, zt + 1.0))
     return c
 
 
@@ -303,6 +434,7 @@ def tray_features():
         adds.append(box(x - P.HOOK_W / 2, x + P.HOOK_W / 2, yw - 0.3 - P.HOOK_T, yw - 0.3, zb, P.COVER_T + P.HOOK_H))
         adds.append(box(x - P.HOOK_W / 2 + 1, x + P.HOOK_W / 2 - 1, yw - 0.35, yw - 0.3 + P.HOOK_TOOTH,
                         P.COVER_T + P.HOOK_H - 1.8, P.COVER_T + P.HOOK_H - 0.4))
+    adds += snap_arms() + snap_teeth()
     return adds, cuts
 
 
@@ -334,8 +466,8 @@ def kb_rail_solids():
 @lru_cache(None)
 def _tp_rails():
     if P.LID:   # full-height ribs of the lid, from wall to wall of the pocket, bearing on the tray
-        y0 = P.tp_gy0 - P.tp_ring_in - 0.3
-        y1 = P.tp_gy1 + P.tp_ring_in + 0.3
+        y0 = P.tp_gy0 - P.TP_RING[2] - 0.3
+        y1 = P.tp_gy1 + P.TP_RING[3] + 0.3
         r = [rail(x, y0, y1, lambda y: P.tp_bottom(y) - P.TP_PAD, width=3.0, zb=P.COVER_T) for x in P.tp_rails]
     else:
         r = [rail(x, P.tp_gy0 + 4, P.tp_gy1 - 4, lambda y: P.tp_bottom(y) - P.TP_PAD) for x in P.tp_rails]
@@ -487,14 +619,14 @@ def fit_trackpad():
     """Trackpad opening + pocket wall with the crush ribs, 5 mm deep. Push the trackpad in from below:
     it should grip, sit centred with an even gap, and the glass should be 0.3 below the plate top when the
     plate is flat on the desk upside down with a 0.3 mm shim under the glass."""
-    o = P.tp_ring_out + 4.0
+    o = max(P.TP_RING) + P.RING_T + 4.0
     plate = prism(tp_off(o), P.z_in_top, P.H)
     plate = chamfer(plate.edges().group_by(Axis.Z)[-1], P.E_TOP)
     plate = cut(plate, [prism(tp_off(P.TP_CLR), P.z_in_top - 1, P.H + 1)])
     top = plate.faces().sort_by(Axis.Z)[-1]
     plate = chamfer([e for w in top.inner_wires() for e in w.edges()], P.PC)
-    ring = prism(tp_off(P.tp_ring_out) - tp_off(P.tp_ring_in), P.z_in_top - 5.0, P.z_in_top + 0.05)
-    return fuse(plate.fuse(ring), crush_ribs())
+    wall = prism(ring(P.RING_T) - ring(), P.z_in_top - 5.0, P.z_in_top + 0.05)
+    return fuse(plate.fuse(wall), crush_ribs())
 
 
 def fit_socket():

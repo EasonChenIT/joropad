@@ -45,14 +45,17 @@ def main():
     line(cov.is_valid and len(cov.solids()) == 1, f"{CN}: valid single solid, {cov.volume / 1000:.1f} cm3")
 
     print("== device fit (interference volume, mm3)")
-    v = overlap(kb, top); line(v < 1.0, f"Joro body vs top case: {v:.2f}")
+    sp = list(zip(Dk.holder_specs(), Dk.holders())) if P.LID else []
+    v = overlap(kb, top)
+    v_sp = sum(overlap(kb, h) for spec, h in sp if spec[1] == "kb")
+    line(abs(v - v_sp) < 1.0, f"Joro body vs top case: {v:.2f} (all of it is spring preload: {v_sp:.2f})")
     v = overlap(kb, cov); line(v < 1.0, f"Joro body vs {CN}: {v:.2f}")
     v = overlap(caps, top); line(v < 1.0, f"key caps vs top case: {v:.2f}")
     v = overlap(tp, cov); line(v < 1.0, f"trackpad vs {CN}: {v:.2f}")
     v = overlap(tp, top)
-    ribs = Dk.crush_ribs()
+    ribs = Dk.crush_ribs() + [h for spec, h in sp if spec[1] == "tp"]
     v_rib = sum(overlap(tp, r) for r in ribs)
-    line(abs(v - v_rib) < 1.0, f"trackpad vs top case: {v:.2f} (all of it is the {len(ribs)} crush ribs: {v_rib:.2f})")
+    line(abs(v - v_rib) < 1.0, f"trackpad vs top case: {v:.2f} (all of it is crush-rib / spring preload: {v_rib:.2f})")
     for s, b in zip(P.sockets, socks):
         vt, vc = overlap(b, top), overlap(b, cov)
         line(vt < 1.0 and vc < 1.0, f"{s['name']} socket body vs top / cover: {vt:.2f} / {vc:.2f}")
@@ -72,20 +75,47 @@ def main():
     line(P.H <= 20.0, f"deck height {P.H:.2f}")
 
     if P.LID:
-        print("== lid on tray (no screws)")
-        v = overlap(top, cov); line(v < 0.5, f"lid vs tray interference: {v:.2f} mm3")
-        line(len(P.MAG_POS) >= 6, f"{len(P.MAG_POS)} magnet pairs (d{P.MAG_D:g} x {P.MAG_H:g}), {len(P.PIN_POS)} alignment pins, "
-                                  f"{len(P.HOOK_X)} back hooks")
-        from build123d import Axis
+        print("== lid on tray: printed snap clips + back hooks (no screws, magnets, foam or glue)")
+        v = overlap(top, cov); line(v < 0.5, f"lid vs tray interference when closed: {v:.2f} mm3")
+        line(len(P.SNAP_X) >= 2 and len(P.HOOK_X) >= 2,
+             f"{len(P.SNAP_X)} front snap clips, {len(P.HOOK_X)} back hooks, {len(P.PIN_POS)} alignment pins")
+        defl = (P.SNAP_TOOTH - P.SNAP_GAP) + 0.3                    # snap arm deflection while closing (+tolerance)
+        eps = 1.5 * P.SNAP_T * defl / P.SNAP_L ** 2
+        line(eps <= 0.03, f"snap arm strain while closing: {eps * 100:.1f}% (PA12 limit for repeated use ~3%)")
+        from build123d import Axis, Pos as _Pos
         hinge = Axis((0, P.D, P.COVER_T), (1, 0, 0))            # the lid pivots on its back bottom edge
-        hit = [(a, overlap(top.rotate(hinge, -a), cov) + overlap(top.rotate(hinge, -a), kb))
-               for a in (1, 3, 6, 10, 15, 20, 30, 45, 60, 80)]
-        worst = max(hit, key=lambda t: t[1])
-        line(worst[1] < 0.5, "lid swings open about the back edge without hitting the tray or the Joro: "
-                             + ", ".join(f"{a}deg {v:.1f}" for a, v in hit) + " mm3")
-        floor = P.COVER_T + P.MAG_PAD_H - P.MAG_H - 0.2
-        line(floor >= 0.8, f"tray under each magnet pocket: {floor:.2f} mm (MJF min 0.8)")
-        note("charging ports removed: the Joro and the trackpad come out of the deck to charge")
+        tray_rigid = cov - [t for t in Dk.snap_teeth()]           # the teeth are meant to flex out of the way
+        hit = []
+        for a in (1, 3, 6, 10, 15, 20, 30, 45, 60, 80):
+            v = overlap(top.rotate(hinge, -a), tray_rigid) + overlap(kb.rotate(hinge, -a), tray_rigid) \
+                + overlap(tp.rotate(hinge, -a), tray_rigid)
+            hit.append((a, v))
+        line(max(v for _, v in hit) < 0.5, "lid (with the Joro and trackpad inside) swings open about the back edge "
+             "without hitting the tray: " + ", ".join(f"{a}deg {v:.1f}" for a, v in hit) + " mm3")
+
+        print("== printed spring fingers (opposing pairs centre each device; nothing to buy)")
+        specs = Dk.holder_specs()
+        for (kind, dev, o, u, n, r, z0, z1, low), h in zip(specs, Dk.holders()):
+            body = kb if dev == "kb" else tp
+            name = "Joro" if dev == "kb" else "trackpad"
+            if kind == "pad":
+                d = h.distance_to(body)
+                line(d < 0.15, f"{name} datum pad at ({o[0]:.0f}, {o[1]:.0f}): {d:.2f} mm from the device")
+                continue
+            lo, hi = 0.0, r                                       # bisect: how far back until it stops touching
+            for _ in range(10):
+                mid = (lo + hi) / 2
+                if overlap(_Pos(-n[0] * mid, -n[1] * mid, 0) * h, body) > 1e-4:
+                    lo = mid
+                else:
+                    hi = mid
+            travel = r - P.SPRING_T                                # tip can be pushed until the finger lies flat
+            ok = 0.6 <= hi <= travel - 0.8
+            line(ok, f"{name} spring at ({o[0]:.0f}, {o[1]:.0f}): preload {hi:.2f} mm, travel {travel:.1f} mm "
+                     f"(absorbs {hi:.1f} wider / {travel - hi:.1f} narrower)")
+        eps = 1.5 * P.SPRING_T * (P.SPRING_PRELOAD + 0.8) / P.SPRING_L ** 2
+        line(eps <= 0.03, f"spring strain at preload + 0.8 mm tolerance: {eps * 100:.1f}% (PA12 limit ~3%)")
+        note("charging ports removed: open the lid, take the Joro and the trackpad out to charge")
 
     if P.sockets:
         print("== sockets on the left face")
@@ -112,9 +142,9 @@ def main():
         left = P.TP_CLR - tol * (P.TP_W + 2 * P.TP_CLR) / 2
         line(left >= 0.1, f"trackpad -> opening edge: {P.TP_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.10)")
         left = P.KB_CLR - tol * (P.KB_W + 2 * P.KB_CLR) / 2
-        line(left >= 0.2, f"Joro -> bay wall: {P.KB_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.20; EVA strips fill it)")
+        line(left >= 0.2, f"Joro -> bay wall: {P.KB_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.20; springs fill it)")
         left = P.tp_ring_in - tol * (P.TP_W + 2 * P.tp_ring_in) / 2
-        line(left >= 0.3, f"trackpad -> pocket wall: {P.tp_ring_in:.2f} nominal, {left:.2f} worst case (EVA pads fill it)")
+        line(left >= 0.3, f"trackpad -> pocket wall: {P.tp_ring_in:.2f} nominal, {left:.2f} worst case (springs fill it)")
         if not P.LID:
             note("cover <-> wall gap is not budgeted: both parts come out of the same build and scale together")
         else:
