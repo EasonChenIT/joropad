@@ -6,7 +6,7 @@ Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用
 
 用 build123d（OpenCascade）建模，可以直接输出 STEP。有两种生成方式：
 
-- **service（默认）**：交给打印服务商一次成型。上壳、底盖各打一整块（JLC3DP MJF 尼龙 PA12），配合尺寸留足服务商的公差，用泡棉定位，用自攻螺丝固定。
+- **service（默认）**：交给打印服务商一次成型。上壳、底盖各打一整块（JLC3DP MJF 尼龙 PA12），底盖是全封闭的实心板。配合尺寸留足服务商的公差，用泡棉定位，用自攻螺丝固定。
   1. 先按 [实测表](docs/measure_sheet.md) 量好设备尺寸。
   2. 下单和装配看 [下单与装配指南](docs/order_guide.md)。
   3. **实测值没确认之前，程序不会生成下单文件。**

@@ -62,15 +62,19 @@ def labelled(shape, label, color):
     return shape
 
 
-ORDER_NOTE = """Joro + Magic Trackpad 主板 - 打印订单说明
-=========================================
-文件: top_case.stl (上壳), bottom_cover.stl (底盖)。单位 mm, 按 1:1 打印, 不要缩放。
-工艺/材料: MJF 尼龙 PA12 (HP), 染黑 (或本色灰)。各 1 件。
-不需要螺纹嵌件/铜螺母 (用自攻螺丝)。不需要打磨抛光。
-上壳顶面 (大平面, 带两个开口的那一面) 是外观面, 请尽量朝向不易变形的方向摆放。
-尺寸: 上壳 {top}, 底盖 {cov}。
-体积: 上壳 {vt:.1f} cm3, 底盖 {vc:.1f} cm3。
-生成参数: {meas}
+ORDER_NOTE = """Joro + Magic Trackpad 主板 - 打印订单说明 / Order notes
+==========================================================
+文件 Files: top_case.stl (上壳 top case), bottom_cover.stl (底盖 bottom cover)
+单位 mm，按 1:1 打印，不要缩放 / Units mm, print 1:1, do not scale.
+工艺/材料 Process: MJF 尼龙 PA12 (HP) / MJF PA12 nylon. 染黑或本色灰 / Dyed black, or natural grey.
+数量 Qty: 各 1 件 / 1 of each.
+不需要螺纹嵌件、铜螺母、攻牙 / No threaded inserts, no tapping (self-tapping screws are used).
+外观面 Cosmetic face: 上壳顶面（有两个大开口的平面）/ the flat top face of top_case (the one with the two large openings).
+包装 Packing: 两件平放，用泡棉或纸板夹住，防止运输中压弯、划伤顶面。寄往澳大利亚。
+              Pack both parts flat between foam or cardboard so they cannot bend; the top face must not be scratched. Shipping to Australia.
+尺寸 Size: 上壳 top case {top}; 底盖 bottom cover {cov}
+体积 Volume: 上壳 {vt:.1f} cm3, 底盖 {vc:.1f} cm3
+生成参数 Data: {meas}
 """
 
 
@@ -99,7 +103,7 @@ def build_service():
     sz = lambda s: " x ".join(f"{v:.1f}" for v in (s.bounding_box().size.X, s.bounding_box().size.Y, s.bounding_box().size.Z))
     with open(os.path.join(out, "订单说明.txt"), "w", encoding="utf-8") as f:
         f.write(ORDER_NOTE.format(top=sz(top), cov=sz(cov), vt=top.volume / 1000, vc=cov.volume / 1000,
-                                  meas="实测值 (confirmed)" if P.MEASURED else "估计值 - 仅供预览, 不要下单"))
+                                  meas="实测值 measured (confirmed)" if P.MEASURED else "估计值 ESTIMATES - preview only, DO NOT ORDER"))
     print(f"wrote {out} in {time.time() - t0:.0f}s")
 
 

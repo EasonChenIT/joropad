@@ -16,8 +16,8 @@
   FAIL measurements.json confirmed (real caliper readings, not estimates)  -> order files are blocked until this passes
   ok   Joro USB-C port face: back (the layout routes it from the back face)
 == solids
-  ok   top case: valid single solid, 202.7 cm3
-  ok   cover: valid single solid, 87.6 cm3
+  ok   top case: valid single solid, 202.5 cm3
+  ok   cover: valid single solid, 139.9 cm3
 == device fit (interference volume, mm3)
   ok   Joro body vs top case: 0.00
   ok   Joro body vs cover: 0.00
@@ -47,6 +47,6 @@
   ok   trackpad -> pocket wall: 1.00 nominal, 0.68 worst case (EVA pads fill it)
   info cover <-> wall gap is not budgeted: both parts come out of the same build and scale together
 == mass
-  info solid MJF PA12 293 g (top 205 g + cover 88 g); with devices (374 + 230 g) about 0.90 kg
+  info solid MJF PA12 346 g (top 205 g + cover 141 g); with devices (374 + 230 g) about 0.95 kg
 
 FAILED: measurements.json confirmed (real caliper readings, not estimates)  -> order files are blocked until this passes

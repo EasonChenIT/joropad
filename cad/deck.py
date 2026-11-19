@@ -367,7 +367,7 @@ def cover_holes():
 @lru_cache(None)
 def cover():
     plate = prism(cover_outline(), 0, P.COVER_T)
-    holes = cover_holes()
+    holes = cover_holes() if P.COVER_HOLES else []
     if holes:
         plate = cut(plate, [prism(Sketch() + holes, -1, P.COVER_T + 1)])
     plate = fuse(plate, rails() + keepers())
