@@ -69,7 +69,7 @@ ORDER_NOTE = """Joro + Magic Trackpad 主板 - 打印订单说明 / Order notes
 工艺/材料 Process: MJF 尼龙 PA12 (HP) / MJF PA12 nylon. 染黑或本色灰 / Dyed black, or natural grey.
 数量 Qty: 各 1 件 / 1 of each.
 不需要螺纹嵌件、铜螺母、攻牙（设计里没有螺丝）/ No threaded inserts, no tapping (the design uses no screws).
-不要打磨或额外后处理：零件上有 1 mm 的弹片、卡扣，触控板开口有 0.8 mm 薄边 / No sanding or extra post-processing: 1 mm spring fingers, snap clips and a 0.8 mm lip around the trackpad opening.
+不要打磨或额外后处理：零件上有 1 mm 的弹片和卡扣 / No sanding or extra post-processing: the parts have 1 mm spring fingers and snap clips.
 外观面 Cosmetic face: 上壳顶面（有两个大开口的平面）/ the flat top face of top_case (the one with the two large openings).
 包装 Packing: 两件平放，用泡棉或纸板夹住，防止运输中压弯、划伤顶面。寄往澳大利亚。
               Pack both parts flat between foam or cardboard so they cannot bend; the top face must not be scratched. Shipping to Australia.

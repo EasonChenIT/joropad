@@ -255,10 +255,9 @@ def top_case():
         cuts.append(box(x0 - 1, x1 + 1, b["notch"][0], b["notch"][1], P.COVER_T - 1, P.COVER_T + P.NOTCH_H))
     body = fuse(body, [walls] + adds)
     # keep the device spaces clear
-    z_pocket = (P.H - P.LIP_T) if P.TP_LIP > 0 else P.z_in_top      # pocket reaches up to the lip underside
-    body = cut(body, [prism(bay(), -1, P.z_kb_top), prism(ring(), -1, z_pocket),
+    body = cut(body, [prism(bay(), -1, P.z_kb_top), prism(ring(), -1, P.z_in_top),
                       prism(tp_off(P.TP_CLR), P.z_in_top - 0.2, P.H + 1)])   # walls overlap the panel by 0.05
-    body = fuse(body, crush_ribs() + (holders() if P.LID else []))
+    body = fuse(body, crush_ribs() + (tp_rail_solids() + holders() if P.LID else []))
     if P.LID:
         cuts += lid_cuts()
     else:
@@ -354,21 +353,21 @@ def holder_specs():
     gap_b = (P.D - P.WALL) - (kb_tb - (P.z_kb_top - zb1) * tana_k)
     for xc in (80.0, P.W / 2, P.W - 80.0):
         s.append(("spring", "kb", (xc - L_ / 2, P.D - P.WALL), (1, 0), (0, -1), gap_b + pre, zb0, zb1, True))
-    # --- trackpad (pushed in from below, glass first, onto the lip: lead-in at the low end)
+    # --- trackpad (dropped in from the top: lead-in at the high end); springs as tall as the side allows
     L, R, F, B = P.TP_RING
-    z1t = min(P.z_in_top - 0.2, P.z_tp_top - 1.5)         # stay below the glass layer
+    z1t = P.z_in_top - 0.2
     cx = (P.tp_gx0 + P.tp_gx1) / 2
     for yc in (P.tp_gy0 + 30.0, P.tp_gy1 - 30.0):
         z0 = P.tp_bottom(yc - L_ / 2) + 0.5                 # bottom of the side face is highest at the front end
-        s.append(("spring", "tp", (P.tp_gx0 - L, yc - L_ / 2), (0, 1), (1, 0), L + pre, z0, z1t, True))
-        s.append(("spring", "tp", (P.tp_gx1 + R, yc - L_ / 2), (0, 1), (-1, 0), R + pre, z0, z1t, True))
+        s.append(("spring", "tp", (P.tp_gx0 - L, yc - L_ / 2), (0, 1), (1, 0), L + pre, z0, z1t, False))
+        s.append(("spring", "tp", (P.tp_gx1 + R, yc - L_ / 2), (0, 1), (-1, 0), R + pre, z0, z1t, False))
     z0f = P.tp_bottom(P.tp_gy0 - P.tp_lean_f) + 0.5
     lean_lo = (P.z_tp_top - z0f) * tana_t                  # front face sticks out most at its bottom
     z0b = P.tp_bottom(P.tp_gy1) + 0.5
     lean_hi = (P.z_tp_top - z1t) * tana_t                  # back face sticks out most at its top
     for xc in (cx - 45.0, cx + 45.0):
-        s.append(("spring", "tp", (xc - L_ / 2, P.tp_gy0 - F), (1, 0), (0, 1), F - lean_lo + pre, z0f, z1t, True))
-        s.append(("spring", "tp", (xc - L_ / 2, P.tp_gy1 + B), (1, 0), (0, -1), B + lean_hi + pre, z0b, z1t, True))
+        s.append(("spring", "tp", (xc - L_ / 2, P.tp_gy0 - F), (1, 0), (0, 1), F - lean_lo + pre, z0f, z1t, False))
+        s.append(("spring", "tp", (xc - L_ / 2, P.tp_gy1 + B), (1, 0), (0, -1), B + lean_hi + pre, z0b, z1t, False))
     return s
 
 
@@ -466,9 +465,12 @@ def kb_rail_solids():
 
 @lru_cache(None)
 def _tp_rails():
-    """Trackpad rails, carried by the cover / tray (wider on the service tray: they take the clicks)."""
-    w = 3.0 if P.SVC else 2.0
-    r = [rail(x, P.tp_gy0 + 4, P.tp_gy1 - 4, lambda y: P.tp_bottom(y) - P.TP_PAD, width=w) for x in P.tp_rails]
+    if P.LID:   # full-height ribs of the lid, from wall to wall of the pocket, bearing on the tray
+        y0 = P.tp_gy0 - P.TP_RING[2] - 0.3
+        y1 = P.tp_gy1 + P.TP_RING[3] + 0.3
+        r = [rail(x, y0, y1, lambda y: P.tp_bottom(y) - P.TP_PAD, width=3.0, zb=P.COVER_T) for x in P.tp_rails]
+    else:
+        r = [rail(x, P.tp_gy0 + 4, P.tp_gy1 - 4, lambda y: P.tp_bottom(y) - P.TP_PAD) for x in P.tp_rails]
     return tuple(q for q in r if q is not None)
 
 
@@ -478,7 +480,7 @@ def tp_rail_solids():
 
 def rails():
     """Rails carried by the cover/tray."""
-    return kb_rail_solids() + tp_rail_solids()
+    return kb_rail_solids() + ([] if P.LID else tp_rail_solids())
 
 
 def keepers():

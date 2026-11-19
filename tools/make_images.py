@@ -81,16 +81,9 @@ def main(which=None):
         cut_ = Dk.box(sx - 0.1, sx + 30, -2, 30, -1, 25)
         render([(top & cut_, CASE), (cov & cut_, COVER)], os.path.join(IMG, PFX + "snap.png"),
                dict(pos=(sx - 120, 12, 10), target=(sx, 8, 8), ortho=26, up=(0, 0, 1)), size=(1200, 900))
-    def lip():
-        xs = P.tp_gx0 + 40.0                                    # section through the front edge of the trackpad
-        half = Dk.box(xs - 40, xs, -2, 30, -1, 25)
-        render([(top & half, CASE), (cov & half, COVER), (tp & half, TP)], os.path.join(IMG, PFX + "lip.png"),
-               dict(pos=(xs + 300, 12, 14), target=(xs, 12, 14), ortho=16, up=(0, 0, 1)), size=(1400, 900))
     if P.LID:
         jobs["lid"] = lid_open
         jobs["details"] = details
-        if P.TP_LIP > 0:
-            jobs["lip"] = lip
 
     def fits():
         kl, kr = Dk.fit_keyboard()

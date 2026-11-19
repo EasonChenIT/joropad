@@ -53,14 +53,9 @@ WALL = 2.4                           # outer side wall
 COVER_T = 1.6                        # bottom cover plate
 COVER_GAP = 0.5 if SVC else 0.2      # cover <-> wall gap, per side
 KB_PAD = 0.4 if SVC else 0.5         # rail -> Joro gap (service: bare backstop; the spring fingers hold the Joro up)
-TP_PAD = 0.0 if SVC else 0.5         # rail -> trackpad gap (service: the trackpad rests directly on the tray's rails)
-# service: the top opening is smaller than the trackpad, so a thin lip overhangs the glass edge and the trackpad
-# cannot slide out of the top when the deck is turned over. It is loaded from below; the lip never clamps the glass.
-TP_LIP = 0.8 if SVC else 0.0         # how far the lip overhangs the glass edge
-LIP_T = 0.8                          # lip thickness (MJF minimum wall)
-TP_LIP_GAP = 0.25                    # free play between the glass and the lip underside (no clamping of the glass)
-TP_DROP = (LIP_T + TP_LIP_GAP) if SVC else 0.3   # trackpad glass below the deck top
-TP_CLR = -TP_LIP if SVC else 0.3     # opening offset from the glass outline (negative = lip)
+TP_PAD = 0.0 if SVC else 0.5         # rail -> trackpad gap (service: trackpad sits directly on the lid's rails)
+TP_DROP = 0.3                        # trackpad glass below the deck top
+TP_CLR = 0.5 if SVC else 0.3         # visible gap glass <-> top opening
 TP_RING_CLR = 0.5                    # fdm: pocket wall <-> glass outline on all sides
 # service: pocket wall offsets (left, right, front, back); opposing spring fingers on all four sides centre it
 TP_RING = (2.0, 2.0, 2.3, 2.0)                # front +0.3: the tilted front face leans out ~0.25
@@ -160,7 +155,7 @@ z_in_top = H - SKIN                  # underside of the panel (palm area)
 # --- trackpad, channel, seam rib --------------------------------------------------------
 tp_gx0 = (W - TP_W) / 2              # glass outline
 tp_gx1 = tp_gx0 + TP_W
-tp_gy0 = max(FRONT_MARGIN + TP_CLR, WALL + TP_RING[2]) if SVC else FRONT_MARGIN + TP_CLR   # keep the front wall whole
+tp_gy0 = FRONT_MARGIN + TP_CLR
 tp_gy1 = tp_gy0 + tp_top_len
 if SVC:
     _rb = max(TP_RING[3], TP_BACK_PROTRUSION + 1.5)

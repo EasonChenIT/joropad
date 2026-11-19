@@ -93,16 +93,6 @@ def main():
         line(max(v for _, v in hit) < 0.5, "lid (with the Joro and trackpad inside) swings open about the back edge "
              "without hitting the tray: " + ", ".join(f"{a}deg {v:.1f}" for a, v in hit) + " mm3")
 
-        if P.TP_LIP > 0:
-            print("== trackpad lip (the top opening is smaller than the trackpad)")
-            v0 = overlap(_Pos(0, 0, P.TP_LIP_GAP - 0.05) * tp, top) - overlap(tp, top)
-            v1 = overlap(_Pos(0, 0, P.TP_LIP_GAP + 0.15) * tp, top) - overlap(tp, top)
-            line(v0 < 0.5 < v1, f"glass clears the lip by {P.TP_LIP_GAP} mm in use (no clamping); turned over, the "
-                                f"trackpad stops on the lip ({v1:.0f} mm3 overlap when pushed {P.TP_LIP_GAP + 0.15:.2f} up)")
-            worst = P.TP_LIP - 0.004 * (P.TP_W - 2 * P.TP_LIP) / 2
-            line(worst >= 0.3, f"lip overlaps the glass edge by {P.TP_LIP:.2f} nominal, {worst:.2f} worst case (needs >= 0.3)")
-            note(f"glass sits {P.TP_DROP:.2f} mm below the deck top (lip {P.LIP_T} + play {P.TP_LIP_GAP})")
-
         print("== printed spring fingers (opposing pairs centre each device; nothing to buy)")
         specs = Dk.holder_specs()
         for (kind, dev, o, u, n, r, z0, z1, low), h in zip(specs, Dk.holders()):
@@ -149,9 +139,8 @@ def main():
         kf_len = max(P.kf_x1 - P.kf_x0, P.kf_y1 - P.kf_y0)
         left = P.KEY_CLR - tol * kf_len / 2
         line(left >= 0.15, f"key caps -> opening edge: {P.KEY_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.15)")
-        if P.TP_CLR > 0:
-            left = P.TP_CLR - tol * (P.TP_W + 2 * P.TP_CLR) / 2
-            line(left >= 0.1, f"trackpad -> opening edge: {P.TP_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.10)")
+        left = P.TP_CLR - tol * (P.TP_W + 2 * P.TP_CLR) / 2
+        line(left >= 0.1, f"trackpad -> opening edge: {P.TP_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.10)")
         left = P.KB_CLR - tol * (P.KB_W + 2 * P.KB_CLR) / 2
         line(left >= 0.2, f"Joro -> bay wall: {P.KB_CLR:.2f} nominal, {left:.2f} worst case (needs >= 0.20; springs fill it)")
         left = P.tp_ring_in - tol * (P.TP_W + 2 * P.tp_ring_in) / 2

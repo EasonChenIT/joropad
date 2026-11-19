@@ -1,12 +1,12 @@
 == layout
-  deck W x D x H                   306.8 x 244.7 x 19.65
+  deck W x D x H                   306.8 x 244.5 x 19.65
   keyboard tilt / front height     4.60 deg / 7.49
   Joro plan depth (tilted)         112.96  (footprint 112.0)
   Joro bottom front / back z       10.98 / 2.00
   trackpad tilt                    2.99 deg, glass plan depth 115.06
-  trackpad bottom front / back z   13.70 / 7.71
+  trackpad bottom front / back z   14.45 / 8.46
   channel width                    0.00
-  seam rib centre ys / bay         124.46 / 125.96..242.02
+  seam rib centre ys / bay         124.26 / 125.76..241.82
   rear zone (bay -> outside)       2.70
   key cap proud of the deck        2.30 (pressed: 0.70)
   profile                          service  (measurements NOT confirmed: estimates)
@@ -15,18 +15,18 @@
 == measurements
   FAIL measurements.json confirmed (real caliper readings, not estimates)  -> order files are blocked until this passes
 == solids
-  ok   top case: valid single solid, 160.8 cm3
-  ok   tray: valid single solid, 134.3 cm3
+  ok   top case: valid single solid, 170.7 cm3
+  ok   tray: valid single solid, 125.4 cm3
 == device fit (interference volume, mm3)
   ok   Joro body vs top case: 67.27 (all of it is spring preload: 67.27)
   ok   Joro body vs tray: 0.00
   ok   key caps vs top case: 0.00
   ok   trackpad vs tray: 0.00
-  ok   trackpad vs top case: 85.86 (all of it is crush-rib / spring preload: 85.86)
+  ok   trackpad vs top case: 109.03 (all of it is crush-rib / spring preload: 109.03)
 == clearances (mm)
   ok   Joro bottom -> rails: 0.399 (foam 0.4)
   ok   trackpad bottom -> rails: 0.000 (pad 0.0)
-  ok   glass below the deck top: 1.050
+  ok   glass below the deck top: 0.300
   ok   Joro top plate against the panel underside (z 18.447)
   ok   key caps -> opening edge: 0.800
   ok   key cap still 0.70 proud of the deck when pressed (cap 3.5, panel 1.2, travel 1.6); needs >= 0.3
@@ -36,10 +36,6 @@
   ok   2 front snap clips, 4 back hooks, 4 alignment pins
   ok   snap arm strain while closing: 1.5% (PA12 limit for repeated use ~3%)
   ok   lid (with the Joro and trackpad inside) swings open about the back edge without hitting the tray: 1deg 0.0, 3deg 0.0, 6deg 0.0, 10deg 0.0, 15deg 0.0, 20deg 0.0, 30deg 0.0, 45deg 0.0, 60deg 0.0, 80deg 0.0 mm3
-== trackpad lip (the top opening is smaller than the trackpad)
-  ok   glass clears the lip by 0.25 mm in use (no clamping); turned over, the trackpad stops on the lip (63 mm3 overlap when pushed 0.40 up)
-  ok   lip overlaps the glass edge by 0.80 nominal, 0.48 worst case (needs >= 0.3)
-  info glass sits 1.05 mm below the deck top (lip 0.8 + play 0.25)
 == printed spring fingers (opposing pairs centre each device; nothing to buy)
   ok   Joro spring at (2, 140): preload 1.00 mm, travel 2.0 mm (absorbs 1.0 wider / 1.0 narrower)
   ok   Joro spring at (304, 140): preload 1.00 mm, travel 2.0 mm (absorbs 1.0 wider / 1.0 narrower)
@@ -48,25 +44,26 @@
   ok   Joro spring at (74, 242): preload 0.99 mm, travel 3.4 mm (absorbs 1.0 wider / 2.4 narrower)
   ok   Joro spring at (147, 242): preload 0.99 mm, travel 3.4 mm (absorbs 1.0 wider / 2.4 narrower)
   ok   Joro spring at (221, 242): preload 0.99 mm, travel 3.4 mm (absorbs 1.0 wider / 2.4 narrower)
-  ok   trackpad spring at (71, 29): preload 1.00 mm, travel 2.0 mm (absorbs 1.0 wider / 1.0 narrower)
-  ok   trackpad spring at (235, 29): preload 1.00 mm, travel 2.0 mm (absorbs 1.0 wider / 1.0 narrower)
+  ok   trackpad spring at (71, 28): preload 1.00 mm, travel 2.0 mm (absorbs 1.0 wider / 1.0 narrower)
+  ok   trackpad spring at (235, 28): preload 1.00 mm, travel 2.0 mm (absorbs 1.0 wider / 1.0 narrower)
   ok   trackpad spring at (71, 84): preload 1.00 mm, travel 2.0 mm (absorbs 1.0 wider / 1.0 narrower)
   ok   trackpad spring at (235, 84): preload 1.00 mm, travel 2.0 mm (absorbs 1.0 wider / 1.0 narrower)
-  ok   trackpad spring at (102, 2): preload 0.91 mm, travel 2.1 mm (absorbs 0.9 wider / 1.2 narrower)
+  ok   trackpad spring at (102, 2): preload 0.99 mm, travel 2.1 mm (absorbs 1.0 wider / 1.1 narrower)
   ok   trackpad spring at (102, 122): preload 0.99 mm, travel 2.1 mm (absorbs 1.0 wider / 1.1 narrower)
-  ok   trackpad spring at (192, 2): preload 0.91 mm, travel 2.1 mm (absorbs 0.9 wider / 1.2 narrower)
+  ok   trackpad spring at (192, 2): preload 0.99 mm, travel 2.1 mm (absorbs 1.0 wider / 1.1 narrower)
   ok   trackpad spring at (192, 122): preload 0.99 mm, travel 2.1 mm (absorbs 1.0 wider / 1.1 narrower)
   ok   spring strain at preload + 0.8 mm tolerance: 1.9% (PA12 limit ~3%)
   info charging ports removed: open the lid, take the Joro and the trackpad out to charge
 == one-piece parts vs bureau build volume 370 x 276 x 360
-  ok   top case: 306.8 x 244.7 x 18.0 fits (5 mm margin, any orientation)
-  ok   tray: 306.8 x 244.7 x 13.6 fits (5 mm margin, any orientation)
+  ok   top case: 306.8 x 244.5 x 18.0 fits (5 mm margin, any orientation)
+  ok   tray: 306.8 x 244.5 x 13.6 fits (5 mm margin, any orientation)
 == bureau tolerance budget (worst case +/-0.4% of length, JLC3DP MJF spec)
   ok   key caps -> opening edge: 0.80 nominal, 0.22 worst case (needs >= 0.15)
+  ok   trackpad -> opening edge: 0.50 nominal, 0.18 worst case (needs >= 0.10)
   ok   Joro -> bay wall: 2.00 nominal, 1.40 worst case (needs >= 0.20; springs fill it)
   ok   trackpad -> pocket wall: 2.00 nominal, 1.67 worst case (springs fill it)
   info tray position does not affect any visible gap: both devices are centred by the lid itself
 == mass
-  info solid MJF PA12 298 g (top 162 g + cover 136 g); with devices (374 + 230 g) about 0.90 kg
+  info solid MJF PA12 299 g (top 172 g + cover 127 g); with devices (374 + 230 g) about 0.90 kg
 
 FAILED: measurements.json confirmed (real caliper readings, not estimates)  -> order files are blocked until this passes
