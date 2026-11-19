@@ -1,6 +1,6 @@
 # joropad
 
-Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用 3D 打印制作。顶面完全水平，只露出键帽；触控板玻璃比面板低 0.3 mm。整个上壳是一个用磁铁吸住的盖子，掀开就能拿出键盘和触控板去充电，不用螺丝。
+Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用 3D 打印制作。顶面完全水平，只露出键帽；触控板玻璃比面板低 0.3 mm。整个上壳是一个卡扣固定的盖子，掀开就能拿出键盘和触控板去充电。只有两个打印件，不需要螺丝、磁铁、泡棉、胶水等任何额外材料。
 
 ![deck](docs/img/svc_hero.png)
 ![open](docs/img/svc_lid_open.png)
@@ -8,14 +8,16 @@ Razer Joro + Apple Magic Trackpad（USB-C）组合成的笔记本式主板，用
 用 build123d（OpenCascade）建模，可以直接输出 STEP。有两种生成方式：
 
 - **service（默认）**：交给打印服务商一次成型。上壳、底盘各打一整块（JLC3DP MJF 尼龙 PA12），底盘是全封闭的实心板。
-  - 上壳靠 8 对磁铁、4 根定位销和后边 4 个挂钩扣在底盘上，没有螺丝，也没有充电口。
-  - 配合尺寸留足了服务商的公差，键盘和触控板都用泡棉定位。
+  - 上壳靠前面 2 个打印卡扣和后边 4 个挂钩扣在底盘上，没有螺丝，也没有充电口。
+  - 键盘和触控板由上壳里打印出来的弹片从两边夹住、自动居中，弹片同时吃掉服务商的打印公差。
   1. 先按 [实测表](docs/measure_sheet.md) 量好设备尺寸。
   2. 下单和装配看 [下单与装配指南](docs/order_guide.md)。
   3. **实测值没确认之前，程序不会生成下单文件。**
 - **fdm**（v9）：用自己的 256 mm 打印机打，拆成 8 块，带两个 USB-C 充电口，用螺丝固定。见 [docs/v9_notes.md](docs/v9_notes.md)。`out/print/` 和 `out/joro_deck_v9_step.zip` 是 v9 按估计值生成的快照。
 
 上一版的交接文档：[docs/v8_handoff.md](docs/v8_handoff.md)
+
+成品效果图、细节图和部件图在 [docs/gallery](docs/gallery)。可以旋转的 3D 页面在 `site/`，用 `python tools/gallery.py` 重新生成。
 
 ## 文件
 

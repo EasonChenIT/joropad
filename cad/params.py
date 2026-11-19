@@ -5,9 +5,10 @@ z up (z=0 is the desk). Device dimensions come from measurements.json (IDs match
 Everything below the "derived" line is computed; edit only the inputs above it.
 
 PROFILE "service": one-piece parts for a print bureau (JLC3DP MJF PA12). The top case is a lift-off lid on a
-                   full-footprint tray (magnets + back hooks, no screws, no charging ports): open it, lift the
-                   Joro and the trackpad out, charge them outside. Generous clearances and foam centring so the
-                   first print fits even with the bureau's +/-0.4% tolerance.
+                   full-footprint tray, held by printed snap clips + back hooks. Nothing else to buy: no screws,
+                   magnets, foam or glue. Both devices are held in the lid by printed spring fingers that push
+                   them against printed datum pads, which also absorbs the bureau's +/-0.4% tolerance.
+                   No charging ports: open the lid, take the Joro and the trackpad out, charge them outside.
 PROFILE "fdm"    : v9 - eight tiles for a 256 mm home printer (PETG), tight fits, heat-set inserts.
 """
 import json as _json, math, os as _os
@@ -51,14 +52,19 @@ KB_SKIN = 1.2                        # panel thickness above the keyboard (thin 
 WALL = 2.4                           # outer side wall
 COVER_T = 1.6                        # bottom cover plate
 COVER_GAP = 0.5 if SVC else 0.2      # cover <-> wall gap, per side
-KB_PAD = 0.6 if SVC else 0.5         # rail -> Joro gap: soft sponge pads 1.0 mm (service) / 0.5 mm EVA (fdm)
-TP_PAD = 0.5                         # rail -> trackpad gap: 0.5 mm silicone / felt strips (fine-tune with tape layers)
+KB_PAD = 0.4 if SVC else 0.5         # rail -> Joro gap (service: bare backstop; the spring fingers hold the Joro up)
+TP_PAD = 0.0 if SVC else 0.5         # rail -> trackpad gap (service: trackpad sits directly on the lid's rails)
 TP_DROP = 0.3                        # trackpad glass below the deck top
 TP_CLR = 0.5 if SVC else 0.3         # visible gap glass <-> top opening
-TP_RING_CLR = (1.0 if SVC else 0.5)  # pocket wall <-> glass outline (service: 1.5 mm EVA pads centre the trackpad)
+TP_RING_CLR = 0.5                    # fdm: pocket wall <-> glass outline on all sides
+# service: pocket wall offsets (left, right, front, back); opposing spring fingers on all four sides centre it
+TP_RING = (2.0, 2.0, 2.3, 2.0)                # front +0.3: the tilted front face leans out ~0.25
 RING_T = 1.2                         # trackpad pocket wall
 CRUSH = 0.0 if SVC else 0.15         # crush-rib interference; 0 disables the ribs
-KB_CLR = 1.0 if SVC else 0.4         # keyboard bay clearance (service: 1.5 mm EVA strips centre the Joro)
+KB_CLR = 2.0 if SVC else 0.4         # keyboard bay side clearance (service: opposing springs left and right)
+KB_CLR_F = 0.1 if SVC else 0.4       # bay front: the seam rib is the datum (service)
+KB_CLR_B = 3.0 if SVC else 0.4       # bay back: room for the spring fingers (service)
+SPRING_T, SPRING_L, SPRING_PRELOAD = 1.0, 12.0, 1.0   # printed leaf springs: thickness, length, nominal squeeze
 KF_R = M["K12b_keycap_corner_r"] + (0.8 if SVC else 0.5)
 KEY_CLR = 0.8 if SVC else 0.5        # gap between key caps and the opening edge
 CORNER_R = 10.0                      # plan corner radius of the deck
@@ -97,10 +103,12 @@ SPLIT = not SVC                      # service: one-piece top case and cover; fd
 PORTS = not SVC                      # USB-C charging sockets in the left face (fdm/v9 only)
 LID = SVC                            # top case lifts off a full-footprint tray (magnets + back hooks)
 # --- lid closure (service) ---
-MAG_D, MAG_H = 6.0, 3.0              # neodymium disc magnets, 8 pairs, glued into pockets
-MAG_POCKET_CLR = 0.5                 # pocket diameter = MAG_D + this (glue fills it)
-MAG_PAD_H = 3.0                      # magnet pad on the tray, the shell boss stops above it
+MAG_D, MAG_H = 6.0, 3.0              # (magnets are no longer used; kept so old configs still load)
+MAG_POCKET_CLR = 0.5
+MAG_PAD_H = 3.0
 MAG_BOSS_R = 5.5
+SNAP_W, SNAP_T, SNAP_L, SNAP_TOOTH = 12.0, 1.2, 12.0, 1.2   # front snap clips on the tray (PA12 cantilevers)
+SNAP_GAP = 0.3                       # arm <-> lid wall
 PIN_R0, PIN_R1, PIN_H, PIN_CLR = 2.0, 1.4, 4.0, 0.5   # 4 conical pins: stop the tray sliding (loose on purpose)
 HOOK_W, HOOK_T, HOOK_H, HOOK_TOOTH = 24.0, 1.4, 4.5, 0.9   # back-edge hooks (the lid's hinge)
 PRY_W, PRY_H = 30.0, 2.5             # finger notch at the front parting line
@@ -149,19 +157,26 @@ tp_gx0 = (W - TP_W) / 2              # glass outline
 tp_gx1 = tp_gx0 + TP_W
 tp_gy0 = FRONT_MARGIN + TP_CLR
 tp_gy1 = tp_gy0 + tp_top_len
-tp_ring_in = max(TP_RING_CLR, TP_BACK_PROTRUSION + 0.5) if TP_BACK_PROTRUSION > 0 else TP_RING_CLR   # pocket wall offset
+if SVC:
+    _rb = max(TP_RING[3], TP_BACK_PROTRUSION + 1.5)
+    TP_RING = (TP_RING[0], TP_RING[1], TP_RING[2], _rb)
+else:
+    _r = max(TP_RING_CLR, TP_BACK_PROTRUSION + 0.5) if TP_BACK_PROTRUSION > 0 else TP_RING_CLR
+    TP_RING = (_r, _r, _r, _r)
+tp_ring_in = min(TP_RING)            # smallest pocket wall offset
 tp_ring_out = tp_ring_in + RING_T
-cf = tp_gy1 + tp_ring_out            # front face of the trackpad cable channel
+cf = tp_gy1 + TP_RING[3] + RING_T    # front face of the trackpad cable channel
 sock_w, sock_h = (SOCK_BODY[0], SOCK_BODY[1]) if SOCK_ORIENT == "h" else (SOCK_BODY[1], SOCK_BODY[0])
 slot_w, slot_h = SOCK_SLOT if SOCK_ORIENT == "h" else SOCK_SLOT[::-1]
 CW = max(PLUG_HEAD + 0.5 - tp_ring_out, sock_w + 2 * SOCK_CLR) if PORTS else 0.0   # cable channel width
 ys = cf + CW + SEAM_RIB / 2          # y of the seam rib centre line
 kb_y0 = cf + CW + SEAM_RIB           # keyboard bay front
 kb_x0 = WALL                         # keyboard bay left
-kb_fy = kb_y0 + KB_CLR               # Joro front-bottom edge
+kb_fy = kb_y0 + KB_CLR_F             # Joro front-bottom edge
 kb_ty0 = kb_fy + kb_top_y0           # Joro top plate front edge (plan)
 kb_ty1 = kb_ty0 + kb_top_len
-kb_end = kb_fy + kb_plan_d + (max(KB_CLR, KB_BACK_PROTRUSION + 0.5) if KB_BACK_PROTRUSION > 0 else KB_CLR)   # bay back, clears knobs
+kb_end = kb_fy + kb_plan_d + (max(KB_CLR_B, KB_BACK_PROTRUSION + 0.5 + (1.0 if SVC else 0.0))
+                              if KB_BACK_PROTRUSION > 0 else KB_CLR_B)   # bay back, clears knobs on the back
 bw1 = kb_end + BACK_WALL             # back face of the keyboard back wall
 # rear zone: 90-degree plug head, and the second socket on the flat part of the left face
 if PORTS:
@@ -170,7 +185,14 @@ if PORTS:
     D = bw1 + max(rz_plug, rz_sock) + WALL
 else:
     # only the deck's rounded corner has to clear the bay's rounded corner, plus room for the back hooks
-    D = kb_end + max(WALL + HOOK_T + 1.2, CORNER_R - (KB_R + KB_CLR)) + 0.3
+    # the deck's rounded inner corner must enclose the Joro's rounded corner (+0.5), and the back wall must sit
+    # behind the bay
+    _kb_tb = kb_fy + kb_plan_d                                     # Joro top-back edge
+    _ckx, _cky = WALL + KB_CLR + KB_R, _kb_tb - KB_R               # centre of the Joro's back-left corner arc
+    _rneed = (CORNER_R - WALL) - (KB_R + 0.5)
+    _dx = CORNER_R - _ckx
+    _dy = math.sqrt(max(_rneed ** 2 - _dx ** 2, 0.0)) if _dx < _rneed else 0.0
+    D = max(kb_end + WALL, _cky - _dy + CORNER_R) + 0.3
 z_sock = (COVER_T + z_in_top) / 2
 sockets = [
     dict(name="trackpad", y=cf + CW / 2, z=z_sock),
@@ -186,7 +208,7 @@ kf_y0 = kb_ty0 + KF_INSET[2] - KEY_CLR
 kf_y1 = kb_ty1 - KF_INSET[3] + KEY_CLR
 
 # palm-rest isogrid zones (inside the outer wall, outside the trackpad pocket, in front of the channel)
-palm_zones = [(WALL, tp_gx0 - tp_ring_out), (tp_gx1 + tp_ring_out, W - WALL)]
+palm_zones = [(WALL, tp_gx0 - TP_RING[0] - RING_T), (tp_gx1 + TP_RING[1] + RING_T, W - WALL)]
 
 # --- seams of the top case (each tile <= BED - 2*BED_MARGIN) -----------------------------
 if SEAM_STYLE == "straight":
@@ -202,15 +224,14 @@ Y_COVER_R = 84.0                     # between the boss rows y=60 and y=108
 # --- screw bosses (M3 inserts; the cover screws into all of them) -------------------------
 y_rz_boss = bw1 + BOSS_R - 0.2       # rear-zone bosses hug the keyboard back wall
 bosses = []
-MAG_POS, PIN_POS, HOOK_X = [], [], []
+MAG_POS, PIN_POS, HOOK_X, SNAP_X = [], [], [], []
 if LID:
-    # no screws: 8 magnet pairs + 4 alignment pins in the palm rests, hooks along the back edge
+    # no screws, no magnets: 2 snap clips at the front, 4 hooks along the back edge, 4 alignment pins
     seam_boss_y = None
-    row = (14.0, 62.0, cf - 7.0)
-    MAG_POS = [(x, y) for x in (12.0, W - 12.0) for y in row] + [(62.0, row[2]), (W - 62.0, row[2])]
-    PIN_POS = [(x, y) for x in (62.0, W - 62.0) for y in row[:2]]
+    PIN_POS = [(x, y) for x in (62.0, W - 62.0) for y in (30.0, cf - 12.0)]
     HOOK_X = [45.0, 115.0, W - 115.0, W - 45.0]
-    bosses = MAG_POS + PIN_POS
+    SNAP_X = [40.0, W - 40.0]
+    bosses = PIN_POS
     SEAM_LUG_X = []
     bulkheads = []
 elif SEAM_STYLE == "straight":
@@ -240,7 +261,7 @@ NOTCH_H = 6.0
 # --- cover support rails ------------------------------------------------------------------
 kb_rails = [kb_x0 + KB_CLR + v for v in (12.0, 80.0, 149.0, 218.0, 286.0)]
 tp_rails = [tp_gx0 + v for v in (14.0, 80.0, 146.0)]
-feet = [(20.0, 20.0), (W - 20.0, 20.0), (20.0, D - 20.0), (W - 20.0, D - 20.0)]
+feet = [] if SVC else [(20.0, 20.0), (W - 20.0, 20.0), (20.0, D - 20.0), (W - 20.0, D - 20.0)]
 
 
 def kb_bottom(y):

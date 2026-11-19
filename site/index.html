@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Joro 触控板主板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* layout: one column; the 3D viewer is the hero, then the gallery grouped like a product sheet */
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --ink: #1d2128;
+  --muted: #5d6573;
+  --line: #d9dde3;
+  --accent: #c2410c;          /* dimension red-orange, also used for the spring colour in renders */
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161a; --surface: #1d2026; --ink: #e9ecf1; --muted: #9aa3b2; --line: #2e333b; --accent: #fb923c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161a; --surface: #1d2026; --ink: #e9ecf1; --muted: #9aa3b2; --line: #2e333b; --accent: #fb923c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.6; }
+main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 64px; display: grid; gap: 40px; }
+header { display: grid; gap: 6px; }
+h1 { font-size: 1.75rem; line-height: 1.25; margin: 0; text-wrap: balance; font-weight: 700; }
+h2 { font-size: 1.2rem; margin: 0 0 4px; text-wrap: balance; }
+.spec { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 0; padding: 0; list-style: none; }
+.spec li { font-size: .85rem; padding: 2px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.spec .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.note { color: var(--muted); font-size: .9rem; max-width: 65ch; margin: 0; }
+
+/* viewer */
+.viewer { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+#stage { position: relative; aspect-ratio: 16 / 10; background: linear-gradient(#eef0f3, #dfe3e8); touch-action: none; }
+:root[data-theme="dark"] #stage { background: linear-gradient(#262a31, #1a1d22); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #stage { background: linear-gradient(#262a31, #1a1d22); } }
+#stage canvas { display: block; width: 100%; height: 100%; }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: .95rem; }
+.hint { position: absolute; left: 12px; bottom: 10px; font-size: .78rem; color: var(--muted); background: color-mix(in srgb, var(--surface) 80%, transparent); padding: 2px 8px; border-radius: 6px; }
+.controls { display: grid; gap: 14px; padding: 16px; border-top: 1px solid var(--line); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.row > .label { font-size: .85rem; color: var(--muted); min-width: 3.5em; }
+.chip { font: inherit; font-size: .88rem; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.chip:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.slider { display: flex; align-items: center; gap: 10px; flex: 1 1 260px; }
+.slider input { flex: 1; accent-color: var(--accent); }
+.slider output { font-family: var(--font-mono); font-size: .85rem; min-width: 4.5em; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* gallery */
+section { display: grid; gap: 14px; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.grid.wide { grid-template-columns: 1fr; }
+figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: grid; }
+figure button { all: unset; cursor: zoom-in; display: block; background: #f3f4f6; }
+figure button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+figure img { width: 100%; height: auto; display: block; }
+.grid:not(.wide) figure button { aspect-ratio: 16 / 10; }
+.grid:not(.wide) figure img { height: 100%; object-fit: contain; }
+figcaption { padding: 8px 12px 10px; font-size: .88rem; }
+figcaption b { display: block; font-weight: 500; }
+figcaption span { color: var(--muted); font-size: .82rem; }
+dialog { border: 0; padding: 0; max-width: min(96vw, 1600px); background: transparent; }
+dialog::backdrop { background: rgba(10, 12, 16, .82); }
+dialog img { max-width: 100%; max-height: 86vh; display: block; border-radius: 8px; background: #f3f4f6; }
+dialog p { color: #e9ecf1; margin: 8px 2px 0; font-size: .9rem; }
+dialog .close { position: absolute; top: 8px; right: 8px; }
+footer { color: var(--muted); font-size: .85rem; }
+@media (max-width: 520px) { h1 { font-size: 1.4rem; } #stage { aspect-ratio: 4 / 3.4; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Joro 键盘 + Magic Trackpad 主板</h1>
+    <ul class="spec">
+      <li>外形 <span class="num">306.8 × 244.5 × 19.6</span> mm</li>
+      <li>MJF 尼龙 PA12，两个打印件</li>
+      <li>上壳卡扣 + 后挂钩，无螺丝</li>
+      <li>打印弹片夹住设备，不用泡棉</li>
+      <li>触控板玻璃比面板低 <span class="num">0.3</span> mm</li>
+    </ul>
+    <p class="note">尺寸按目前的估计值生成；键盘和触控板实测后，外形会有零点几毫米的变化，结构不变。</p>
+  </header>
+
+  <section class="viewer" aria-label="3D 模型">
+    <div id="stage">
+      <div id="loading">正在载入 3D 模型…</div>
+      <div class="hint">单指拖动旋转 · 双指缩放 / 平移</div>
+    </div>
+    <div class="controls">
+      <div class="row" role="group" aria-label="显示的零件">
+        <span class="label">显示</span>
+        <button class="chip" id="t-lid" aria-pressed="true">上壳</button>
+        <button class="chip" id="t-tray" aria-pressed="true">底盘</button>
+        <button class="chip" id="t-kb" aria-pressed="true">键盘</button>
+        <button class="chip" id="t-tp" aria-pressed="true">触控板</button>
+      </div>
+      <div class="row" role="group" aria-label="视角">
+        <span class="label">视角</span>
+        <button class="chip" data-view="iso">斜视</button>
+        <button class="chip" data-view="front">正前</button>
+        <button class="chip" data-view="top">俯视</button>
+        <button class="chip" data-view="bottom">仰视</button>
+        <button class="chip" data-view="back">后面</button>
+        <button class="chip" data-view="left">左侧</button>
+      </div>
+      <div class="row" role="group" aria-label="颜色">
+        <span class="label">颜色</span>
+        <button class="chip" id="c-black" aria-pressed="true">染黑</button>
+        <button class="chip" id="c-grey" aria-pressed="false">浅灰（看细节）</button>
+      </div>
+      <div class="row">
+        <label class="slider" for="s-open"><span class="label">开盖</span>
+          <input id="s-open" type="range" min="0" max="80" step="1" value="0"><output id="o-open">0°</output></label>
+        <label class="slider" for="s-exp"><span class="label">拆开</span>
+          <input id="s-exp" type="range" min="0" max="80" step="1" value="0"><output id="o-exp">0 mm</output></label>
+      </div>
+      <div class="row">
+        <button class="chip" id="t-cut" aria-pressed="false">剖切</button>
+        <label class="slider" for="s-cut"><span class="label">剖切位置</span>
+          <input id="s-cut" type="range" min="0" max="306" step="1" value="153"><output id="o-cut">x 153</output></label>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>整机</h2>
+    <div class="grid" id="g-whole"></div>
+  </section>
+  <section>
+    <h2>两个打印件</h2>
+    <p class="note">橙色是上壳里打印出来的弹片：键盘 7 片、触控板 8 片，从两边把设备推到正中间。</p>
+    <div class="grid" id="g-parts"></div>
+  </section>
+  <section>
+    <h2>开盖取设备</h2>
+    <div class="grid" id="g-open"></div>
+  </section>
+  <section>
+    <h2>细节</h2>
+    <div class="grid" id="g-detail"></div>
+  </section>
+  <section>
+    <h2>剖面</h2>
+    <div class="grid wide" id="g-section"></div>
+  </section>
+  <section>
+    <h2>部件图</h2>
+    <div class="grid wide" id="g-draw"></div>
+  </section>
+
+  <footer>模型和图片由 build123d 参数化模型自动生成。</footer>
+</main>
+
+<dialog id="lightbox" aria-label="大图">
+  <button class="chip close" id="lb-close">关闭</button>
+  <img id="lb-img" alt="">
+  <p id="lb-cap"></p>
+</dialog>
+
+<script type="importmap">{"imports": {"three": "./lib/three.module.min.js"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "./lib/OrbitControls.js";
+// ---------------------------------------------------------------- gallery
+const G = {
+  "g-whole": [
+    ["01_front_left", "前左方", "染黑效果；只露出键帽，触控板玻璃略低于面板"],
+    ["02_front_low", "正前方低角度", "前缘正中是开盖用的手指凹口"],
+    ["03_rear_right", "后右方", "背面和右侧都是完整的外墙"],
+    ["05_top_plan", "俯视", "键区开口四周 0.8 mm 缝，触控板开口四周 0.5 mm 缝"],
+    ["06_bottom", "底面", "底盘是整块实心板，和上壳的分界线在侧面最下方"],
+    ["07_exploded_above", "拆开（上方）", "上壳、键盘、触控板、底盘"],
+    ["08_exploded_below", "拆开（下方）", "上壳内部的三角加强筋和触控板支撑条"],
+  ],
+  "g-parts": [
+    ["09_lid_top", "上壳 正面", "触控板口里能看到上壳自带的三条支撑条"],
+    ["10_lid_underside", "上壳 内侧", "加强筋、定位孔、卡扣槽、弹片"],
+    ["11_lid_underside_plan", "上壳 内侧俯视", "弹片位置一目了然"],
+    ["12_tray_top", "底盘 内侧", "5 条键盘支撑条、4 根定位销、前面 2 个卡扣、后边 4 个挂钩"],
+    ["13_tray_bottom", "底盘 外侧", "整块平板，没有孔"],
+  ],
+  "g-open": [
+    ["14_open_25", "掀开 25°", "从前缘凹口往上掀，卡扣松开，上壳绕后边的挂钩翻起"],
+    ["15_open_70", "掀开 70°", "键盘和触控板被弹片夹在上壳里，跟着上壳一起翻起"],
+  ],
+  "g-detail": [
+    ["16_snap_section", "卡扣剖面", "底盘上的卡扣臂（蓝）扣进上壳前墙的槽"],
+    ["17_hook_section", "后挂钩剖面", "底盘后边的挂钩伸进上壳后墙的槽，相当于铰链"],
+    ["20_pin_section", "定位销剖面", "锥形销插进上壳的孔，防止底盘滑动"],
+    ["18_kb_springs", "键盘槽弹片", "左右两侧各 2 片、后面 3 片"],
+    ["19_tp_springs", "触控板口袋弹片", "四边各 2 片，下端有导向斜面，方便压进去"],
+    ["21_finger_notch", "手指凹口", "前缘正中，手指伸进去把上壳往上掀"],
+    ["22_key_corner", "键区开口角", "开口比键区每边大 0.8 mm"],
+    ["23_trackpad_corner", "触控板开口角", "玻璃比面板低 0.3 mm，四周 0.5 mm 缝"],
+  ],
+  "g-section": [
+    ["24_long_section", "纵向剖面（中间）", "顶面水平；触控板和键盘都斜放在支撑条上，键帽露出面板"],
+    ["25_cross_section", "横向剖面（键盘处）", "键盘左右两侧的弹片把它推到正中"],
+    ["04_left_side", "左侧", "总高 19.6 mm"],
+  ],
+  "g-draw": [
+    ["D1_lid_drawing", "部件图 1：上壳", "主要外形和开口尺寸"],
+    ["D2_tray_drawing", "部件图 2：底盘", "卡扣、挂钩、定位销位置"],
+  ],
+};
+const lb = document.getElementById("lightbox");
+for (const [id, items] of Object.entries(G)) {
+  const box = document.getElementById(id);
+  for (const [file, title, cap] of items) {
+    const fig = document.createElement("figure");
+    const btn = document.createElement("button");
+    btn.setAttribute("aria-label", "放大：" + title);
+    const img = document.createElement("img");
+    img.src = "img/" + file + ".png"; img.alt = title; img.loading = "lazy";
+    btn.appendChild(img);
+    btn.addEventListener("click", () => {
+      document.getElementById("lb-img").src = img.src;
+      document.getElementById("lb-img").alt = title;
+      document.getElementById("lb-cap").textContent = title + " · " + cap;
+      try { lb.showModal(); } catch (e) { lb.setAttribute("open", ""); }
+    });
+    const fc = document.createElement("figcaption");
+    fc.innerHTML = "<b></b><span></span>";
+    fc.querySelector("b").textContent = title; fc.querySelector("span").textContent = cap;
+    fig.append(btn, fc); box.appendChild(fig);
+  }
+}
+document.getElementById("lb-close").addEventListener("click", () => lb.close());
+lb.addEventListener("click", (e) => { if (e.target === lb) lb.close(); });
+
+// ---------------------------------------------------------------- 3D viewer
+(async function () {
+  const stage = document.getElementById("stage");
+  const loading = document.getElementById("loading");
+  let data;
+  try { data = await (await fetch("models.json")).json(); } catch (e) { loading.textContent = "模型数据没有载入，下面的图片仍可查看。"; return; }
+  const meta = data.meta;
+  const W = meta.W, D = meta.D, CT = meta.cover_t;
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.localClippingEnabled = true;
+  stage.prepend(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8f98, 1.7));
+  const d1 = new THREE.DirectionalLight(0xffffff, 1.6); d1.position.set(-0.5, -1, 1.4); scene.add(d1);
+  const d2 = new THREE.DirectionalLight(0xffffff, 0.6); d2.position.set(1, 0.8, 0.4); scene.add(d2);
+  const camera = new THREE.PerspectiveCamera(30, 1, 1, 5000);
+  camera.up.set(0, 0, 1);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; controls.dampingFactor = 0.1;
+  const center = new THREE.Vector3(W / 2, D / 2, 6);
+
+  const cutPlane = new THREE.Plane(new THREE.Vector3(-1, 0, 0), W / 2);
+  const palette = {
+    black: { lid: 0x35373c, tray: 0x3e4046 },
+    grey:  { lid: 0xc6c9ce, tray: 0x9fb4c7 },
+  };
+  const mats = {
+    lid: new THREE.MeshStandardMaterial({ color: palette.black.lid, roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide }),
+    tray: new THREE.MeshStandardMaterial({ color: palette.black.tray, roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide }),
+    keyboard: new THREE.MeshStandardMaterial({ color: 0x26272b, roughness: 0.6, metalness: 0.2, side: THREE.DoubleSide }),
+    trackpad: new THREE.MeshStandardMaterial({ color: 0xe9e9ea, roughness: 0.35, metalness: 0.1, side: THREE.DoubleSide }),
+  };
+  const mesh = (n) => {                       // base64 of float32 xyz triples, three per triangle
+    const bin = atob(data[n]); const buf = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(buf.buffer), 3));
+    return g;
+  };
+  const [gLid, gTray, gKb, gTp] = ["lid", "tray", "keyboard", "trackpad"].map(mesh);
+  gLid.computeVertexNormals(); gTray.computeVertexNormals(); gKb.computeVertexNormals(); gTp.computeVertexNormals();
+
+  // the lid (with both devices, which the springs hold inside it) pivots on its back bottom edge
+  const pivot = new THREE.Group(); pivot.position.set(0, D, CT); scene.add(pivot);
+  const inLid = new THREE.Group(); inLid.position.set(0, -D, -CT); pivot.add(inLid);
+  const mLid = new THREE.Mesh(gLid, mats.lid), mKb = new THREE.Mesh(gKb, mats.keyboard), mTp = new THREE.Mesh(gTp, mats.trackpad);
+  inLid.add(mLid, mKb, mTp);
+  const mTray = new THREE.Mesh(gTray, mats.tray); scene.add(mTray);
+  loading.remove();
+
+  function size() {
+    const r = stage.getBoundingClientRect();
+    renderer.setSize(r.width, r.height, false);
+    camera.aspect = r.width / Math.max(r.height, 1); camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(size).observe(stage); size();
+
+  const views = {
+    iso: [W / 2 - 300, -340, 300], front: [W / 2, -560, 60], top: [W / 2, D / 2 - 1, 640],
+    bottom: [W / 2, D / 2 - 1, -640], back: [W / 2 + 120, D + 520, 220], left: [-560, D / 2, 90],
+  };
+  function setView(v) { camera.position.set(...views[v]); controls.target.copy(center); controls.update(); }
+  setView("iso");
+  document.querySelectorAll("[data-view]").forEach((b) => b.addEventListener("click", () => setView(b.dataset.view)));
+
+  const toggle = (id, obj) => {
+    const b = document.getElementById(id);
+    b.addEventListener("click", () => { const on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", on); obj.visible = on; });
+  };
+  toggle("t-lid", mLid); toggle("t-tray", mTray); toggle("t-kb", mKb); toggle("t-tp", mTp);
+
+  const setColor = (k) => {
+    mats.lid.color.setHex(palette[k].lid); mats.tray.color.setHex(palette[k].tray);
+    document.getElementById("c-black").setAttribute("aria-pressed", k === "black");
+    document.getElementById("c-grey").setAttribute("aria-pressed", k === "grey");
+  };
+  document.getElementById("c-black").addEventListener("click", () => setColor("black"));
+  document.getElementById("c-grey").addEventListener("click", () => setColor("grey"));
+
+  const sOpen = document.getElementById("s-open"), sExp = document.getElementById("s-exp"), sCut = document.getElementById("s-cut");
+  sCut.max = Math.round(W);
+  function apply() {
+    const a = +sOpen.value, e = +sExp.value;
+    pivot.rotation.x = -a * Math.PI / 180;
+    mLid.position.z = e; mKb.position.z = e / 2; mTp.position.z = e / 2;
+    document.getElementById("o-open").textContent = a + "°";
+    document.getElementById("o-exp").textContent = e + " mm";
+    cutPlane.constant = +sCut.value;
+    document.getElementById("o-cut").textContent = "x " + sCut.value;
+  }
+  [sOpen, sExp, sCut].forEach((s) => s.addEventListener("input", apply)); apply();
+  const cutBtn = document.getElementById("t-cut");
+  cutBtn.addEventListener("click", () => {
+    const on = cutBtn.getAttribute("aria-pressed") !== "true"; cutBtn.setAttribute("aria-pressed", on);
+    Object.values(mats).forEach((m) => { m.clippingPlanes = on ? [cutPlane] : []; m.needsUpdate = true; });
+    if (on) setColor("grey");
+  });
+
+  (function loop() { controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })();
+})();
+</script>
+</body>
+</html>

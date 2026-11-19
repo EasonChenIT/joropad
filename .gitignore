@@ -5,3 +5,5 @@ tools/_render/
 out/step/
 # preview geometry from estimated measurements - never order these
 out/service_preview/
+# copy of docs/gallery made by tools/gallery.py for the interactive page
+site/img/
